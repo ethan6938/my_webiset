@@ -34,5 +34,5 @@ app.get('/users', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('🚀 Server ready at https://my-webiset.vercel.app/Galactic%20User%20Fetcher');
+  console.log('🚀 Server ready at http://localhost:3000');
 });
