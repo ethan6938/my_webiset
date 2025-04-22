@@ -7,7 +7,7 @@ export default function handler(req, res) {
     const id = req.query.id;
   
     res.status(200).send(`
-      <form class="fade-in" hx-put="/api/user/${id}" hx-target="this" hx-swap="outerHTML">
+      <form class="fade-in" hx-post="/api/user/${id}" hx-target="this" hx-swap="outerHTML">
         <div class="mb-3">
           <label for="name" class="form-label text-info">Name</label>
           <input type="text" class="form-control" id="name" name="name" value="Greg Lim">
