@@ -1,26 +1,13 @@
-import escapeHtml from 'escape-html';
+const escapeHtml = require('escape-html');
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
-  },
-};
-
-export default function handler(req, res) {
-  // Check for the correct HTTP method
+module.exports = function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
   }
 
   try {
-    // If the method is POST, log that the function is operational
-    console.log('Serverless function is operational.');
-
     const { name = 'Unknown', bio = 'No bio provided' } = req.body;
 
-    // Respond with the updated content
     res.status(200).send(`
       <div class="card fade-in" style="width: 22rem;" hx-target="this" hx-swap="outerHTML">
         <div class="card-body text-center">
@@ -36,4 +23,4 @@ export default function handler(req, res) {
     console.error('💥 Error:', err);
     res.status(500).send('Internal Server Error');
   }
-}
+};
