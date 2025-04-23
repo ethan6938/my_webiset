@@ -8,16 +8,19 @@ export const config = {
   },
 };
 
-export default  function handler(req, res) {
-  res.status(200).send('Serverless function is operational.');
-
-  if (method !== 'POST') {
+export default function handler(req, res) {
+  // Check for the correct HTTP method
+  if (req.method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
   }
 
   try {
+    // If the method is POST, log that the function is operational
+    console.log('Serverless function is operational.');
+
     const { name = 'Unknown', bio = 'No bio provided' } = req.body;
 
+    // Respond with the updated content
     res.status(200).send(`
       <div class="card fade-in" style="width: 22rem;" hx-target="this" hx-swap="outerHTML">
         <div class="card-body text-center">
@@ -31,6 +34,6 @@ export default  function handler(req, res) {
     `);
   } catch (err) {
     console.error('💥 Error:', err);
-    res.status(500).send('Internal Server Error 5');
+    res.status(500).send('Internal Server Error');
   }
 }
