@@ -1,5 +1,3 @@
-import escapeHtml from 'escape-html';
-
 export const config = {
   api: {
     bodyParser: {
@@ -10,29 +8,17 @@ export const config = {
 
 export default async function handler(req, res) {
   try {
-    const method = req.body?._method || req.method;
-    console.log('➡️ METHOD:', method);
-    console.log('📦 BODY:', req.body);
+    console.log('🧪 Incoming Method:', req.method);
+    console.log('🧪 Body:', req.body);
 
-    if (method !== 'PUT') {
-      return res.status(405).send('Method Not Allowed');
-    }
-
-    const { name = 'Unknown', bio = 'No bio provided' } = req.body;
-
-    return res.status(200).send(`
-      <div class="card fade-in" style="width: 22rem;" hx-target="this" hx-swap="outerHTML">
-        <div class="card-body text-center">
-          <h5 class="card-title">${escapeHtml(name)}</h5>
-          <p class="card-text">${escapeHtml(bio)}</p>
-          <button class="btn btn-primary mt-3" hx-get="/api/user/1/edit">
-            Edit Profile
-          </button>
-        </div>
-      </div>
+    res.status(200).send(`
+      <pre style="color: lime; background: #111; padding: 1rem;">
+        METHOD: ${req.method}
+        BODY: ${JSON.stringify(req.body, null, 2)}
+      </pre>
     `);
   } catch (err) {
-    console.error('💥 ERROR:', err);
-    return res.status(500).send('Internal Server Error');
+    console.error('🔥 ERROR:', err);
+    res.status(500).send('Internal Server Error');
   }
 }
