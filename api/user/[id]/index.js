@@ -8,8 +8,8 @@ export const config = {
   },
 };
 
-export default async function handler(req, res) {
-  const method = req.body?._method || req.method;
+export default  function handler(req, res) {
+  res.status(200).send('Serverless function is operational.');
 
   if (method !== 'PUT') {
     return res.status(405).send('Method Not Allowed');
