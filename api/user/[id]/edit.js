@@ -3,7 +3,7 @@ export default function handler(req, res) {
 
   res.status(200).send(`
     <form class="fade-in" method="POST" 
-          hx-post="/api/user/1" 
+          hx-post="/api/user/${id}" 
           hx-target="this" 
           hx-swap="outerHTML">
       <input type="hidden" name="_method" value="PUT">
