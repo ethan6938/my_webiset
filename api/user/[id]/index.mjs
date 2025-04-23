@@ -1,5 +1,4 @@
-const escapeHtml = require('escape-html');
-
+import escapeHtml from 'escape-html';
 
 export const config = {
   api: {
