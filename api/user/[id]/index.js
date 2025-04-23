@@ -11,7 +11,7 @@ export const config = {
 export default  function handler(req, res) {
   res.status(200).send('Serverless function is operational.');
 
-  if (method !== 'PUT') {
+  if (method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
   }
 
