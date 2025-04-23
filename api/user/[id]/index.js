@@ -9,7 +9,9 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  if (req.method !== 'PUT') {
+  const method = req.body?._method || req.method;
+
+  if (method !== 'PUT') {
     return res.status(405).send('Method Not Allowed');
   }
 
