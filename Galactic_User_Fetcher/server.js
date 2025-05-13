@@ -1,18 +1,10 @@
 import express from 'express';
-import cors from 'cors';
-import fetch from 'node-fetch'; // ✅ Needed if using Node < 18
-
 const app = express();
 
-// Enable CORS for all origins (for development)
-app.use(cors());
-
-// Middleware
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// GET /users - Fetch and render user data as HTML
 app.get('/users', async (req, res) => {
   const limit = +req.query.limit || 5;
   const response = await fetch(`https://jsonplaceholder.typicode.com/users?_limit=${limit}`);
@@ -41,12 +33,6 @@ app.get('/users', async (req, res) => {
   res.send(html);
 });
 
-// Root route
-app.get('/', (req, res) => {
-  res.send('🌍 Hello from Galactic User Fetcher backend!');
-});
-
-// Start the server
 app.listen(3000, () => {
-  console.log('🚀 Server ready at http://localhost:3000');
+  console.log('🚀 Server ready at https://my-webiset.vercel.app/Galactic_User_Fetcher');
 });
