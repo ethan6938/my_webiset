@@ -1,5 +1,15 @@
 import express from 'express';
+import cors from 'cors';
+
 const app = express();
+
+// Enable CORS for all origins (for development only)
+app.use(cors());
+
+// Or restrict CORS to certain origins
+// app.use(cors({
+//   origin: ['http://localhost:8000', 'http://127.0.0.1:3000']
+// }));
 
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
@@ -33,6 +43,11 @@ app.get('/users', async (req, res) => {
   res.send(html);
 });
 
+// Optional root route
+app.get('/', (req, res) => {
+  res.send('🌍 Hello from Galactic User Fetcher backend!');
+});
+
 app.listen(3000, () => {
-  console.log('🚀 Server ready at https://my-webiset.vercel.app/Galactic_User_Fetcher');
+  console.log('🚀 Server ready at http://localhost:3000');
 });
