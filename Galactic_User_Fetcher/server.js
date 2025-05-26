@@ -1,14 +1,15 @@
 import express from 'express';
+import users from 'api';
 const app = express();
 
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.get('/users', async (req, res) => {
-  const limit = +req.query.limit || 5;
-  const response = await fetch(`https://jsonplaceholder.typicode.com/users?_limit=${limit}`);
-  const users = await response.json();
+// app.get('/users', async (req, res) => {
+//   const limit = +req.query.limit || 5;
+//   const response = await fetch(`https://jsonplaceholder.typicode.com/users?_limit=${limit}`);
+//   const users = await response.json();
 
   const html = `
     <div class="card-neon text-start">
@@ -31,7 +32,6 @@ app.get('/users', async (req, res) => {
   `;
 
   res.send(html);
-});
 
 app.listen(3000, () => {
   console.log('🚀 Server ready at https://my-webiset.vercel.app/Galactic_User_Fetcher/public/index.html');
