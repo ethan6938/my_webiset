@@ -9,7 +9,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Edit Form Route
-app.get('/api/user/:id/edit', (req, res) => {
+app.get('/user/:id/edit', (req, res) => {
   res.send(`
     <form class="fade-in" 
           hx-post="/user/${req.params.id}" 
@@ -32,7 +32,7 @@ Follower of Christ | Author of Best-selling Amazon Tech Books and Creator of Cod
 });
 
 // Save Updated Info (POST instead of PUT)
-app.post('/api/user/:id', (req, res) => {
+app.post('/user/:id', (req, res) => {
   const name = escapeHtml(req.body?.name || 'Unknown');
   const bio = escapeHtml(req.body?.bio || 'No bio provided');
 
