@@ -34,7 +34,7 @@ app.put('/user/:id', (req, res) => {
       <div class="card-body text-center">
         <h5 class="card-title">${name}</h5>
         <p class="card-text">${bio}</p>
-         <button class="btn btn-primary mt-3" hx-get="/user/${user.id}/edit">
+         <button class="btn btn-primary mt-3" hx-post="/user/${user.id}/edit">
           Edit Profile
         </button>
       </div>
