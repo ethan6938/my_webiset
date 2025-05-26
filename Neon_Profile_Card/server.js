@@ -32,7 +32,7 @@ Follower of Christ | Author of Best-selling Amazon Tech Books and Creator of Cod
 });
 
 // Save Updated Info (POST instead of PUT)
-app.post('/user/:id', (req, res) => {
+app.post('/api/user/:id', (req, res) => {
   const name = escapeHtml(req.body?.name || 'Unknown');
   const bio = escapeHtml(req.body?.bio || 'No bio provided');
 
