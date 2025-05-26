@@ -1,5 +1,5 @@
 import express from 'express';
-import users from 'api';
+
 const app = express();
 
 app.use(express.static('public'));
