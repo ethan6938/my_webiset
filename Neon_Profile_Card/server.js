@@ -7,7 +7,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Edit Form Route
-app.get('/user/:id/edit', (req, res) => {
+app.get('/user/:id/index', (req, res) => {
   res.send(`
     <form class="fade-in" hx-put="/user/1" hx-target="this" hx-swap="outerHTML">
       <div class="mb-3">
