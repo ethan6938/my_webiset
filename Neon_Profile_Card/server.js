@@ -7,7 +7,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Edit Form Route
-app.get('/user/1/:id/edit', (req, res) => {
+app.get('/user/:id/edit', (req, res) => {
   res.send(`
     <form class="fade-in" hx-put="/user/1" hx-target="this" hx-swap="outerHTML">
       <div class="mb-3">
@@ -34,7 +34,7 @@ app.put('/user/:id', (req, res) => {
       <div class="card-body text-center">
         <h5 class="card-title">${name}</h5>
         <p class="card-text">${bio}</p>
-        <button class="btn btn-primary mt-3" hx-get="/user/1/edit">
+         <button class="btn btn-primary mt-3" hx-get="/user/${user.id}/edit">
           Edit Profile
         </button>
       </div>
