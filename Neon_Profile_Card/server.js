@@ -19,7 +19,7 @@ app.get('/user/1/:id/edit', (req, res) => {
         <textarea class="form-control" id="bio" name="bio" rows="3">Follower of Christ | Author of Best-selling Amazon Tech Books and Creator of Coding Courses</textarea>
       </div>
       <button type="submit" class="btn btn-primary w-100 mb-2">Save Changes</button>
-      <button class="btn btn-primary w-100" hx-get="Neon_Profile_Card/public/index.html">Cancel</button>
+      <button class="btn btn-primary w-100" hx-get="/Neon_Profile_Card/public/index.html">Cancel</button>
     </form>
   `);  
 });
