@@ -1,5 +1,6 @@
 import express from 'express';
 import escapeHtml from 'escape-html';
+import serverless from 'serverless-http';
 
 const app = express();
 const PORT = 3000;
@@ -78,3 +79,4 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+export default serverless(app);
