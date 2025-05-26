@@ -1,4 +1,3 @@
-const escapeHtml = require('escape-html');
 
 module.exports = function handler(req, res) {
   if (req.method !== 'POST') {
