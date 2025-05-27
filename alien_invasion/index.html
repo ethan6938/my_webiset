@@ -42,6 +42,16 @@ function preload() {
   this.load.image('alien', 'images/alien.png');
   this.load.image('bullet', 'images/bullet.png');
   this.load.image('alienBullet', 'images/alienbullet.png');
+
+
+
+  this.load.on('loaderror', function (file) {
+    console.error('❌ Failed to load:', file.key, file.src);
+  });
+
+  this.load.on('complete', function () {
+    console.log('✅ All assets loaded');
+  });
 }
 
 function create() {
