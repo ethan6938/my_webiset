@@ -123,6 +123,10 @@ function create() {
       bullet.setScale(0.3);
       bullet.body.velocity.y = -400;
     }
+
+   console.log('Ship created:', ship);
+   console.log('Ship hit! Lives remaining:', lives);
+   console.log('ship.visible:', ship.visible, 'ship.active:', ship.active, 'ship.body:', ship.body);
   });
 }
 
