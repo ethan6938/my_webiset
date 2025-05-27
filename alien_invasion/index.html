@@ -18,15 +18,9 @@ const config = {
   backgroundColor: '#000000',
   physics: {
     default: 'arcade',
-    arcade: {
-      debug: false
-    }
+    arcade: { debug: false }
   },
-  scene: {
-    preload,
-    create,
-    update
-  }
+  scene: { preload, create, update }
 };
 
 let ship, cursors, bullets, aliens, alienBullets, score = 0, lives = 3, scoreText, livesText, lastAlienShot = 0;
@@ -34,7 +28,12 @@ let ship, cursors, bullets, aliens, alienBullets, score = 0, lives = 3, scoreTex
 function preload() {
   this.load.image('ship', 'images/ship.bmp');
   this.load.image('alien', 'images/alien.png');
-  this.load.image('bullet', 'https://via.placeholder.com/5x15/ff0000'); // Red bullet
+
+  // Draw a red bullet texture dynamically
+  const g = this.textures.createCanvas('bullet', 5, 15);
+  g.context.fillStyle = '#ff0000';
+  g.context.fillRect(0, 0, 5, 15);
+  g.refresh();
 }
 
 function create() {
@@ -42,7 +41,6 @@ function create() {
   ship.setCollideWorldBounds(true);
 
   cursors = this.input.keyboard.createCursorKeys();
-
   bullets = this.physics.add.group();
   alienBullets = this.physics.add.group();
 
@@ -67,7 +65,7 @@ function create() {
     lives--;
     livesText.setText('Lives: ' + lives);
     if (lives <= 0) {
-      this.add.text(400, 300, 'Game Over', { fontSize: '40px', fill: '#f00' }).setOrigin(0.5);
+      this.add.text(500, 300, 'Game Over', { fontSize: '40px', fill: '#f00' }).setOrigin(0.5);
       this.scene.pause();
     }
   });
@@ -82,6 +80,8 @@ function create() {
 }
 
 function update(time) {
+  if (!ship) return;
+
   if (cursors.left.isDown) {
     ship.setVelocityX(-200);
   } else if (cursors.right.isDown) {
@@ -90,7 +90,6 @@ function update(time) {
     ship.setVelocityX(0);
   }
 
-  // Remove offscreen bullets
   bullets.children.iterate((bullet) => {
     if (bullet && bullet.active && bullet.y < 0) bullet.destroy();
   });
@@ -99,7 +98,6 @@ function update(time) {
     if (bullet && bullet.active && bullet.y > config.height) bullet.destroy();
   });
 
-  // Alien movement and shooting
   aliens.children.iterate((alien) => {
     if (alien && alien.active) {
       alien.x += alien.getData('direction') * 1;
@@ -118,7 +116,7 @@ function update(time) {
   });
 
   if (aliens.countActive() === 0) {
-    this.add.text(400, 300, 'You Win!', { fontSize: '32px', fill: '#0f0' }).setOrigin(0.5);
+    this.add.text(500, 300, 'You Win!', { fontSize: '32px', fill: '#0f0' }).setOrigin(0.5);
     this.scene.pause();
   }
 }
