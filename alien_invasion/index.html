@@ -45,7 +45,7 @@ function preload() {
 
 function create() {
   // Ship
-  this.ship = this.physics.add.sprite(config.width / 2, 550, 'ship').setScale(15);
+  this.ship = this.physics.add.sprite(config.width / 2, 550, 'ship').setScale(10);
   this.ship.setCollideWorldBounds(true);
 
   cursors = this.input.keyboard.createCursorKeys();
@@ -68,7 +68,7 @@ function create() {
   aliens = this.physics.add.group();
   for (let x = 100; x <= 800; x += 80) {
     for (let y = 50; y <= 150; y += 60) {
-      aliens.create(x, y, 'alien').setScale(15);
+      aliens.create(x, y, 'alien').setScale(10);
     }
   }
 
