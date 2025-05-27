@@ -82,6 +82,8 @@ function create() {
     }
   }
 
+
+  
   this.physics.add.overlap(bullets, aliens, (bullet, alien) => {
     bullet.destroy();
     alien.destroy();
@@ -90,7 +92,9 @@ function create() {
   });
 
   this.physics.add.overlap(alienBullets, ship, (bullet, hitship) => {
+  console.log('Ship hit! Invulnerable:', shipInvulnerable, 'Lives before:', lives);
   if (shipInvulnerable) return;
+
 
   bullet.destroy();
   lives -= 1;
