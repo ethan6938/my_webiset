@@ -112,10 +112,11 @@ function create() {
 });
 
 function update() {
-  if (ship && !ship.visible) {
-  console.log('Ship was invisible, forcing visible');
+  if (!ship || !ship.body) return;
+  console.log('Update - Ship visible:', ship.visible, 'Position:', ship.x, ship.y);
   ship.setVisible(true);
-  }}
+  // rest of your update code...
+}
 
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
