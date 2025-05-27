@@ -101,10 +101,13 @@ function create() {
       bullet.body.velocity.y = -400;
     }
   });
+
+  console.log('Ship created:', ship);
 }
 
 function update(time) {
   // Ship movement
+  if (!ship || !ship.body) return;
 
   if (!ship) {
   console.error('Ship is undefined!');
