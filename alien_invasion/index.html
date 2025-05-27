@@ -102,6 +102,7 @@ function create() {
   this.time.delayedCall(1000, () => {
     shipInvulnerable = false;
     hitship.clearTint();
+    hitship.setTexture('ship'); // reload the ship texture
     hitship.setVisible(true); // Ensure visibility is restored
     hitship.setActive(true);  // Ensure it's still active
     console.log('Ship no longer invulnerable, visible:', hitship.visible);
