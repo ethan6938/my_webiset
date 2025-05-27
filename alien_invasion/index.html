@@ -92,13 +92,14 @@ function create() {
   lives -= 1;
   livesText.setText('Lives: ' + lives);
 
+  ship.setVisible(true);
+  ship.setActive(true);
+
   console.log('Ship visible before tint:', ship.visible);
   
   shipInvulnerable = true;
   ship.setTint(0xff0000); // red flash
 
-  ship.setVisible(true);
-  ship.setActive(true);
 
   this.time.delayedCall(1000, () => {
     shipInvulnerable = false;
