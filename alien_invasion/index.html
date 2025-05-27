@@ -88,7 +88,7 @@ function create() {
     scoreText.setText('Score: ' + score);
   });
 
-  this.physics.add.overlap(alienBullets, ship, (bullet, ship) => {
+  this.physics.add.overlap(alienBullets, ship, (bullet, hitship) => {
     bullet.destroy();
     lives -= 1;
     livesText.setText('Lives: ' + lives);
