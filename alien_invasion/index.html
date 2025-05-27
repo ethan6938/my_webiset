@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Alien Invasion Web</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <style>
@@ -13,13 +13,13 @@
 <script>
 const config = {
   type: Phaser.AUTO,
-  width: 800,
+  width: 1000,
   height: 600,
   backgroundColor: '#000000',
   physics: {
     default: 'arcade',
     arcade: {
-      debug: false
+      debug: false,
     }
   },
   scene: {
@@ -29,7 +29,12 @@ const config = {
   }
 };
 
-let ship, cursors, bullets, aliens, score = 0, lives = 3, scoreText, livesText;
+let ship, cursors, bullets, aliens, alienBullets;
+let score = 0, lives = 3;
+let scoreText, livesText;
+let alienVelocityX = 50;  // Horizontal speed of aliens (px/s)
+let alienMoveTimer = 0;   // Timer to control alien movement steps
+let alienDirection = 1;   // 1 = right, -1 = left
 
 function preload() {
   this.load.image('ship', 'images/ship.bmp');
@@ -37,32 +42,40 @@ function preload() {
 }
 
 function create() {
-  // Dynamically create a red bullet texture
-  const bulletGraphics = this.add.graphics();
+  // Create bullet texture dynamically
+  let bulletGraphics = this.add.graphics();
   bulletGraphics.fillStyle(0xff0000, 1);
   bulletGraphics.fillRect(0, 0, 3, 15);
   bulletGraphics.generateTexture('bullet', 3, 15);
+  bulletGraphics.clear();
+
+  // Create alien bullet texture (green)
+  bulletGraphics.fillStyle(0x00ff00, 1);
+  bulletGraphics.fillRect(0, 0, 3, 15);
+  bulletGraphics.generateTexture('alienBullet', 3, 15);
   bulletGraphics.destroy();
 
   // Ship setup
-  ship = this.physics.add.sprite(400, 550, 'ship').setScale(0.5);
+  ship = this.physics.add.sprite(config.width / 2, 550, 'ship').setScale(0.5);
   ship.setCollideWorldBounds(true);
 
-  // Controls
   cursors = this.input.keyboard.createCursorKeys();
 
-  // Bullet group
+  // Player bullets group
   bullets = this.physics.add.group();
 
-  // Alien group
+  // Alien bullets group
+  alienBullets = this.physics.add.group();
+
+  // Aliens group
   aliens = this.physics.add.group();
-  for (let x = 100; x <= 600; x += 100) {
+  for (let x = 100; x <= 900; x += 100) {
     for (let y = 50; y <= 150; y += 50) {
       aliens.create(x, y, 'alien').setScale(0.5);
     }
   }
 
-  // Collision detection
+  // Collisions between player bullets and aliens
   this.physics.add.overlap(bullets, aliens, (bullet, alien) => {
     bullet.destroy();
     alien.destroy();
@@ -70,29 +83,90 @@ function create() {
     scoreText.setText('Score: ' + score);
   });
 
-  // UI
+  // Collisions between alien bullets and ship
+  this.physics.add.overlap(alienBullets, ship, (bullet, ship) => {
+    bullet.destroy();
+    lives--;
+    livesText.setText('Lives: ' + lives);
+    if (lives <= 0) {
+      this.add.text(config.width / 2 - 50, config.height / 2, 'Game Over', { fontSize: '48px', fill: '#f00' });
+      this.scene.pause();
+    }
+  });
+
+  // UI texts
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
 
-  // Shooting
+  // Shoot player bullet on click
   this.input.on('pointerdown', () => {
     let bullet = bullets.create(ship.x, ship.y - 20, 'bullet');
-    bullet.setVelocityY(-300);
+    bullet.setVelocityY(-400);
   });
 }
 
-function update() {
+function update(time, delta) {
+  // Ship movement
   if (cursors.left.isDown) {
-    ship.setVelocityX(-200);
+    ship.setVelocityX(-300);
   } else if (cursors.right.isDown) {
-    ship.setVelocityX(200);
+    ship.setVelocityX(300);
   } else {
     ship.setVelocityX(0);
   }
 
-  // Game Over Condition
+  // Move aliens every 500ms step
+  alienMoveTimer += delta;
+  if (alienMoveTimer > 500) {
+    alienMoveTimer = 0;
+
+    // Check if aliens reached edges to flip direction and move down
+    let reachedEdge = false;
+    aliens.getChildren().forEach(alien => {
+      if (alien.x + alienDirection * 10 > config.width - 50 || alien.x + alienDirection * 10 < 50) {
+        reachedEdge = true;
+      }
+    });
+
+    if (reachedEdge) {
+      alienDirection *= -1;
+      aliens.getChildren().forEach(alien => {
+        alien.y += 10;  // Move down when direction changes
+      });
+    } else {
+      aliens.getChildren().forEach(alien => {
+        alien.x += alienDirection * 10;
+      });
+    }
+  }
+
+  // Aliens shoot randomly every frame with a small chance
+  if (Phaser.Math.Between(0, 100) < 2 && aliens.countActive() > 0) {
+    let shooters = aliens.getChildren();
+    let shooter = Phaser.Utils.Array.GetRandom(shooters);
+    if (shooter) {
+      let alienBullet = alienBullets.create(shooter.x, shooter.y + 20, 'alienBullet');
+      alienBullet.setVelocityY(200);
+    }
+  }
+
+  // Remove off-screen bullets (player)
+  bullets.getChildren().forEach(bullet => {
+    if (bullet.y < 0) {
+      bullet.destroy();
+    }
+  });
+
+  // Remove off-screen alien bullets
+  alienBullets.getChildren().forEach(bullet => {
+    if (bullet.y > config.height) {
+      bullet.destroy();
+    }
+  });
+
+  // Win condition
   if (aliens.countActive() === 0) {
-    this.add.text(300, 300, 'You Win!', { fontSize: '32px', fill: '#0f0' });
+    this.add.text(config.width / 2 - 70, config.height / 2, 'You Win!', { fontSize: '48px', fill: '#0f0' });
     this.scene.pause();
   }
 }
