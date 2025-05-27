@@ -19,7 +19,7 @@ export default function handler(req, res) {
         <textarea class="form-control" id="bio" name="bio" rows="3">Follower of Christ | Author of Best-selling Amazon Tech Books and Creator of Coding Courses</textarea>
       </div>
       <button type="submit" class="btn btn-primary w-100 mb-2">Save Changes</button>
-       <a href="/Neon_Profile_Card/index.html" class="btn btn-secondary w-100">Cancel</a>
+       <a href="/index.html" class="btn btn-secondary w-100">Cancel</a>
     </form>
   `);
 }
