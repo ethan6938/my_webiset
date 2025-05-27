@@ -88,46 +88,33 @@ function create() {
   console.log('Ship hit! Invulnerable:', shipInvulnerable, 'Lives before:', lives);
   if (shipInvulnerable) return;
 
-  // Destroy the bullet
   bullet.destroy();
-
-  // Decrease lives and update UI
   lives -= 1;
   livesText.setText('Lives: ' + lives);
 
-  // Debug visibility before effects
   console.log('Ship visible before tint:', hitship.visible);
 
-  // Set ship invulnerable and visual feedback
   shipInvulnerable = true;
-  hitship.setTint(0xff0000);           // Red flash
-  hitship.setVisible(true);            // Ensure visible
-  hitship.setActive(true);             // Ensure active
-  hitship.setDepth(10);                // Keep ship above other objects
+  hitship.setTint(0xff0000); // red flash
+  hitship.setVisible(true);   // Force visible in case it's hidden
+  hitship.setActive(true);    // Force active in case it's disabled
 
-  // Optional: Debug visual marker on ship
-  this.add.rectangle(hitship.x, hitship.y, 50, 50, 0x00ff00, 0.3).setDepth(20);
-
-  // Delayed call to reset invulnerability and appearance
   this.time.delayedCall(1000, () => {
     shipInvulnerable = false;
     hitship.clearTint();
-    hitship.setTexture('ship');        // Reset texture (optional)
-    hitship.setVisible(true);          // Ensure still visible
-    hitship.setActive(true);           // Ensure still active
+    hitship.setTexture('ship'); // reload the ship texture
+    hitship.setVisible(true); // Ensure visibility is restored
+    hitship.setActive(true);  // Ensure it's still active
     console.log('Ship no longer invulnerable, visible:', hitship.visible);
   });
 
-  // Log current position
   console.log('Ship position:', hitship.x, hitship.y);
 
-  // Game Over condition
   if (lives <= 0) {
     this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
     this.scene.pause();
   }
 });
-
 
 function update() {
   if (!ship || !ship.body) return;
