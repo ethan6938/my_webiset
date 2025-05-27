@@ -98,6 +98,7 @@ function create() {
   hitship.setTint(0xff0000); // red flash
   hitship.setVisible(true);   // Force visible in case it's hidden
   hitship.setActive(true);    // Force active in case it's disabled
+  hitship.setPosition(450, 550); 
 
   this.time.delayedCall(1000, () => {
     shipInvulnerable = false;
