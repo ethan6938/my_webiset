@@ -18,26 +18,19 @@ const config = {
   backgroundColor: '#000000',
   physics: {
     default: 'arcade',
-    arcade: {
-      debug: false,
-    },
+    arcade: { debug: false },
   },
-  scene: {
-    preload,
-    create,
-    update,
-  },
+  scene: { preload, create, update },
 };
 
 let ship, cursors, bullets, aliens, alienBullets;
 let score = 0, lives = 3;
 let scoreText, livesText;
-let alienMoveDirection = 1; // 1 = right, -1 = left
+let alienMoveDirection = 1;
 let alienSpeed = 20;
 let alienShootTimer = 0;
 
 function preload() {
-  // Load your local images from images folder
   this.load.image('ship', 'images/ship.png');
   this.load.image('alien', 'images/alien.png');
   this.load.image('bullet', 'images/bullet.png');
@@ -47,6 +40,7 @@ function preload() {
 function create() {
   ship = this.physics.add.sprite(450, 550, 'ship').setScale(0.3);
   ship.setCollideWorldBounds(true);
+  console.log('Ship created:', ship);
 
   cursors = this.input.keyboard.createCursorKeys();
 
@@ -63,8 +57,6 @@ function create() {
   });
 
   aliens = this.physics.add.group();
-
-  // Create aliens in a grid
   for (let x = 100; x <= 700; x += 80) {
     for (let y = 50; y <= 150; y += 50) {
       aliens.create(x, y, 'alien').setScale(0.25);
@@ -102,8 +94,12 @@ function create() {
   });
 }
 
-function update(time) {
-  // Ship movement
+function update() {
+  if (!ship) {
+    console.error('Ship is undefined!');
+    return;
+  }
+
   if (cursors.left.isDown) {
     ship.setVelocityX(-300);
   } else if (cursors.right.isDown) {
@@ -112,14 +108,12 @@ function update(time) {
     ship.setVelocityX(0);
   }
 
-  // Update alien positions — move horizontally
-  let moveX = alienSpeed * alienMoveDirection * (1 / 60); // per frame approx
-  aliens.children.iterate(function (alien) {
+  let moveX = alienSpeed * alienMoveDirection * (1 / 60);
+  aliens.children.iterate(alien => {
     if (!alien) return;
     alien.x += moveX;
   });
 
-  // Check edges of aliens, reverse direction and move down
   let leftMost = Math.min(...aliens.getChildren().map(a => a.x));
   let rightMost = Math.max(...aliens.getChildren().map(a => a.x));
   if (rightMost > 850) {
@@ -130,7 +124,6 @@ function update(time) {
     aliens.children.iterate(a => a.y += 10);
   }
 
-  // Aliens randomly shoot every ~1.5 seconds
   alienShootTimer += this.game.loop.delta;
   if (alienShootTimer > 1500) {
     alienShootTimer = 0;
@@ -146,15 +139,13 @@ function update(time) {
     }
   }
 
-  // Clean up bullets that leave the screen
-  bullets.children.iterate(function (b) {
+  bullets.children.iterate(b => {
     if (b.active && b.y < 0) b.destroy();
   });
-  alienBullets.children.iterate(function (b) {
+  alienBullets.children.iterate(b => {
     if (b.active && b.y > 600) b.destroy();
   });
 
-  // Win condition
   if (aliens.countActive() === 0) {
     this.add.text(300, 300, 'You Win!', { fontSize: '48px', fill: '#0f0' });
     this.scene.pause();
