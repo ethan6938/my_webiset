@@ -92,23 +92,23 @@ function create() {
   lives -= 1;
   livesText.setText('Lives: ' + lives);
 
-  console.log('Ship visible before tint:', ship.visible);
-  
-  shipInvulnerable = true;
-  ship.setTint(0xff0000); // red flash
+  console.log('Ship visible before tint:', hitship.visible);
 
+  shipInvulnerable = true;
+  hitship.setTint(0xff0000); // red flash
+  hitship.setVisible(true);   // Force visible in case it's hidden
+  hitship.setActive(true);    // Force active in case it's disabled
 
   this.time.delayedCall(1000, () => {
     shipInvulnerable = false;
-    ship.clearTint();
-    console.log('Ship no longer invulnerable, visible:', ship.visible);
+    hitship.clearTint();
+    hitship.setVisible(true); // Ensure visibility is restored
+    hitship.setActive(true);  // Ensure it's still active
+    console.log('Ship no longer invulnerable, visible:', hitship.visible);
   });
 
-  console.log('Ship position:', ship.x, ship.y);
+  console.log('Ship position:', hitship.x, hitship.y);
 
-  ship.setVisible(true);
-  ship.setActive(true);
-  
   if (lives <= 0) {
     this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
     this.scene.pause();
