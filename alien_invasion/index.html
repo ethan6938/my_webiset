@@ -97,6 +97,9 @@ function create() {
   shipInvulnerable = true;
   ship.setTint(0xff0000); // red flash
 
+  ship.setVisible(true);
+  ship.setActive(true);
+
   this.time.delayedCall(1000, () => {
     shipInvulnerable = false;
     ship.clearTint();
