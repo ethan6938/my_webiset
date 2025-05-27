@@ -34,21 +34,27 @@ let ship, cursors, bullets, aliens, score = 0, lives = 3, scoreText, livesText;
 function preload() {
   this.load.image('ship', 'images/ship.bmp');
   this.load.image('alien', 'images/alien.png');
-  this.load.image('bullet', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAOCAYAAAD0f5bSAAAAHklEQVQYlWP8z8Dwn4EIwDiqCBoYjEACmRgDAGHnCz2XNAdfAAAAAElFTkSuQmCC');
 }
 
 function create() {
+  // Dynamically create a red bullet texture
+  const bulletGraphics = this.add.graphics();
+  bulletGraphics.fillStyle(0xff0000, 1);
+  bulletGraphics.fillRect(0, 0, 3, 15);
+  bulletGraphics.generateTexture('bullet', 3, 15);
+  bulletGraphics.destroy();
+
+  // Ship setup
   ship = this.physics.add.sprite(400, 550, 'ship').setScale(0.5);
   ship.setCollideWorldBounds(true);
 
+  // Controls
   cursors = this.input.keyboard.createCursorKeys();
 
-  bullets = this.physics.add.group({
-    classType: Phaser.Physics.Arcade.Image,
-    maxSize: 10,
-    runChildUpdate: true
-  });
+  // Bullet group
+  bullets = this.physics.add.group();
 
+  // Alien group
   aliens = this.physics.add.group();
   for (let x = 100; x <= 600; x += 100) {
     for (let y = 50; y <= 150; y += 50) {
@@ -56,6 +62,7 @@ function create() {
     }
   }
 
+  // Collision detection
   this.physics.add.overlap(bullets, aliens, (bullet, alien) => {
     bullet.destroy();
     alien.destroy();
@@ -63,16 +70,14 @@ function create() {
     scoreText.setText('Score: ' + score);
   });
 
+  // UI
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
 
+  // Shooting
   this.input.on('pointerdown', () => {
-    const bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
-    if (bullet) {
-      bullet.setActive(true);
-      bullet.setVisible(true);
-      bullet.setVelocityY(-300);
-    }
+    let bullet = bullets.create(ship.x, ship.y - 20, 'bullet');
+    bullet.setVelocityY(-300);
   });
 }
 
@@ -85,6 +90,7 @@ function update() {
     ship.setVelocityX(0);
   }
 
+  // Game Over Condition
   if (aliens.countActive() === 0) {
     this.add.text(300, 300, 'You Win!', { fontSize: '32px', fill: '#0f0' });
     this.scene.pause();
