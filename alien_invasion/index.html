@@ -18,15 +18,21 @@ const config = {
   backgroundColor: '#000000',
   physics: {
     default: 'arcade',
-    arcade: { debug: false },
+    arcade: {
+      debug: false,
+    },
   },
-  scene: { preload, create, update },
+  scene: {
+    preload,
+    create,
+    update,
+  },
 };
 
 let ship, cursors, bullets, aliens, alienBullets;
 let score = 0, lives = 3;
 let scoreText, livesText;
-let alienMoveDirection = 1;
+let alienMoveDirection = 1; // 1 = right, -1 = left
 let alienSpeed = 20;
 let alienShootTimer = 0;
 
@@ -40,7 +46,6 @@ function preload() {
 function create() {
   ship = this.physics.add.sprite(450, 550, 'ship').setScale(0.3);
   ship.setCollideWorldBounds(true);
-  console.log('Ship created:', ship);
 
   cursors = this.input.keyboard.createCursorKeys();
 
@@ -57,6 +62,7 @@ function create() {
   });
 
   aliens = this.physics.add.group();
+
   for (let x = 100; x <= 700; x += 80) {
     for (let y = 50; y <= 150; y += 50) {
       aliens.create(x, y, 'alien').setScale(0.25);
@@ -94,12 +100,7 @@ function create() {
   });
 }
 
-function update() {
-  if (!ship) {
-    console.error('Ship is undefined!');
-    return;
-  }
-
+function update(time) {
   if (cursors.left.isDown) {
     ship.setVelocityX(-300);
   } else if (cursors.right.isDown) {
@@ -109,7 +110,7 @@ function update() {
   }
 
   let moveX = alienSpeed * alienMoveDirection * (1 / 60);
-  aliens.children.iterate(alien => {
+  aliens.children.iterate(function (alien) {
     if (!alien) return;
     alien.x += moveX;
   });
@@ -139,10 +140,12 @@ function update() {
     }
   }
 
-  bullets.children.iterate(b => {
+  bullets.children.iterate(function (b) {
+    if (!b) return;
     if (b.active && b.y < 0) b.destroy();
   });
-  alienBullets.children.iterate(b => {
+  alienBullets.children.iterate(function (b) {
+    if (!b) return;
     if (b.active && b.y > 600) b.destroy();
   });
 
