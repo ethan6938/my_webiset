@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Alien Invasion Web - Fixed</title>
+  <title>Alien Invasion Web</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <style>
     body { margin: 0; background-color: black; }
@@ -52,13 +52,13 @@ function create() {
 
   bullets = this.physics.add.group({
     classType: Phaser.Physics.Arcade.Image,
-    maxSize: 10,
+    maxSize: 0.4,
     runChildUpdate: true,
   });
 
   alienBullets = this.physics.add.group({
     classType: Phaser.Physics.Arcade.Image,
-    maxSize: 20,
+    maxSize: 0.4,
     runChildUpdate: true,
   });
 
