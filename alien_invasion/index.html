@@ -84,34 +84,38 @@ function create() {
 
 
   
-  this.physics.add.overlap(bullets, aliens, (bullet, alien) => {
-    bullet.destroy();
-    alien.destroy();
-    score += 10;
-    scoreText.setText('Score: ' + score);
-  });
-
   this.physics.add.overlap(alienBullets, ship, (bullet, hitship) => {
   console.log('Ship hit! Invulnerable:', shipInvulnerable, 'Lives before:', lives);
   if (shipInvulnerable) return;
-
 
   bullet.destroy();
   lives -= 1;
   livesText.setText('Lives: ' + lives);
 
+  console.log('Ship visible before tint:', ship.visible);
+  
   shipInvulnerable = true;
   ship.setTint(0xff0000); // red flash
+
   this.time.delayedCall(1000, () => {
     shipInvulnerable = false;
     ship.clearTint();
+    console.log('Ship no longer invulnerable, visible:', ship.visible);
   });
 
+  console.log('Ship position:', ship.x, ship.y);
+  
   if (lives <= 0) {
     this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
     this.scene.pause();
   }
 });
+
+function update() {
+  if (!ship || !ship.body) return;
+  console.log('Update - Ship visible:', ship.visible, 'Position:', ship.x, ship.y);
+  // rest of your update code...
+}
 
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
