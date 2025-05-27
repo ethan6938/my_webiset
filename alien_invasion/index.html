@@ -92,9 +92,6 @@ function create() {
   lives -= 1;
   livesText.setText('Lives: ' + lives);
 
-  ship.setVisible(true);
-  ship.setActive(true);
-
   console.log('Ship visible before tint:', ship.visible);
   
   shipInvulnerable = true;
@@ -108,6 +105,9 @@ function create() {
   });
 
   console.log('Ship position:', ship.x, ship.y);
+
+  ship.setVisible(true);
+  ship.setActive(true);
   
   if (lives <= 0) {
     this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
