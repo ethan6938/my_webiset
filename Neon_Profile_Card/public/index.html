@@ -87,17 +87,17 @@
   
 </head>
 <body>
-  <div class="container d-flex justify-content-center">
-    <div class="card fade-in" style="width: 22rem;" hx-target="this" hx-swap="outerHTML">
-      <div class="card-body text-center">
-        <h5 class="card-title">Greg Lim</h5>
-        <p class="card-text">
-          Follower of Christ | Author of Best-selling Amazon Tech Books and Creator of Coding Courses
-        </p>
-        <!-- FIX: Use hx-get instead of hx-post, and point to the correct API route -->
-        <button class="btn btn-primary mt-3" hx-get="/api/user/1/edit">
-          Edit Profile
-        </button>
+  <div class="card fade-in" style="width: 22rem;" hx-target="this" hx-swap="outerHTML">
+    <div class="card-body text-center">
+      <h5 class="card-title">Greg Lim</h5>
+      <p class="card-text">
+        Follower of Christ | Author of Best-selling Amazon Tech Books and Creator of Coding Courses
+      </p>
+      <button class="btn btn-primary mt-3" hx-get="/api/user/1">
+        Edit Profile
+      </button>
+    </div>
+  </div>
       </div>
     </div>
   </div>
