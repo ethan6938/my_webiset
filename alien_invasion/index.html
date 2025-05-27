@@ -98,12 +98,10 @@ function create() {
   hitship.setTint(0xff0000); // red flash
   hitship.setVisible(true);   // Force visible in case it's hidden
   hitship.setActive(true);    // Force active in case it's disabled
-  hitship.setPosition(450, 550); 
 
   this.time.delayedCall(1000, () => {
     shipInvulnerable = false;
     hitship.clearTint();
-    hitship.setTexture('ship'); // reload the ship texture
     hitship.setVisible(true); // Ensure visibility is restored
     hitship.setActive(true);  // Ensure it's still active
     console.log('Ship no longer invulnerable, visible:', hitship.visible);
@@ -113,7 +111,7 @@ function create() {
 
   if (lives <= 0) {
     this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
-    // this.scene.pause();
+    this.scene.pause();
   }
 });
 
