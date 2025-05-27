@@ -32,9 +32,12 @@ const config = {
 let ship, cursors, bullets, aliens, alienBullets;
 let score = 0, lives = 3;
 let scoreText, livesText;
-let alienVelocityX = 50;  // Horizontal speed of aliens (px/s)
-let alienMoveTimer = 0;   // Timer to control alien movement steps
-let alienDirection = 1;   // 1 = right, -1 = left
+let alienDirection = 1; // 1 = right, -1 = left
+let alienMoveTimer = 0;
+
+// To track last hit time per alien bullet to prevent rapid life loss
+const bulletHitCooldown = 500; // ms
+let bulletLastHitTime = new Map();
 
 function preload() {
   this.load.image('ship', 'images/ship.bmp');
@@ -61,21 +64,16 @@ function create() {
 
   cursors = this.input.keyboard.createCursorKeys();
 
-  // Player bullets group
   bullets = this.physics.add.group();
-
-  // Alien bullets group
   alienBullets = this.physics.add.group();
 
-  // Aliens group
   aliens = this.physics.add.group();
   for (let x = 100; x <= 900; x += 100) {
     for (let y = 50; y <= 150; y += 50) {
-      aliens.create(x, y, 'alien').setScale(0.5);
+      aliens.create(x, y, 'alien').setScale(0.35); // Smaller aliens
     }
   }
 
-  // Collisions between player bullets and aliens
   this.physics.add.overlap(bullets, aliens, (bullet, alien) => {
     bullet.destroy();
     alien.destroy();
@@ -83,22 +81,27 @@ function create() {
     scoreText.setText('Score: ' + score);
   });
 
-  // Collisions between alien bullets and ship
+  // Alien bullet hits ship logic
   this.physics.add.overlap(alienBullets, ship, (bullet, ship) => {
-    bullet.destroy();
-    lives--;
-    livesText.setText('Lives: ' + lives);
-    if (lives <= 0) {
-      this.add.text(config.width / 2 - 50, config.height / 2, 'Game Over', { fontSize: '48px', fill: '#f00' });
-      this.scene.pause();
+    let now = this.time.now;
+    let lastHit = bulletLastHitTime.get(bullet) || 0;
+
+    if (now - lastHit > bulletHitCooldown) {
+      lives--;
+      livesText.setText('Lives: ' + lives);
+      bulletLastHitTime.set(bullet, now);
+
+      if (lives <= 0) {
+        this.add.text(config.width / 2 - 50, config.height / 2, 'Game Over', { fontSize: '48px', fill: '#f00' });
+        this.scene.pause();
+      }
     }
+    // Note: bullet NOT destroyed here, it continues moving
   });
 
-  // UI texts
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
 
-  // Shoot player bullet on click
   this.input.on('pointerdown', () => {
     let bullet = bullets.create(ship.x, ship.y - 20, 'bullet');
     bullet.setVelocityY(-400);
@@ -106,7 +109,6 @@ function create() {
 }
 
 function update(time, delta) {
-  // Ship movement
   if (cursors.left.isDown) {
     ship.setVelocityX(-300);
   } else if (cursors.right.isDown) {
@@ -115,12 +117,10 @@ function update(time, delta) {
     ship.setVelocityX(0);
   }
 
-  // Move aliens every 500ms step
   alienMoveTimer += delta;
   if (alienMoveTimer > 500) {
     alienMoveTimer = 0;
-
-    // Check if aliens reached edges to flip direction and move down
+    // Check if aliens reached edges
     let reachedEdge = false;
     aliens.getChildren().forEach(alien => {
       if (alien.x + alienDirection * 10 > config.width - 50 || alien.x + alienDirection * 10 < 50) {
@@ -131,7 +131,7 @@ function update(time, delta) {
     if (reachedEdge) {
       alienDirection *= -1;
       aliens.getChildren().forEach(alien => {
-        alien.y += 10;  // Move down when direction changes
+        alien.y += 10;
       });
     } else {
       aliens.getChildren().forEach(alien => {
@@ -140,7 +140,7 @@ function update(time, delta) {
     }
   }
 
-  // Aliens shoot randomly every frame with a small chance
+  // Aliens shoot randomly
   if (Phaser.Math.Between(0, 100) < 2 && aliens.countActive() > 0) {
     let shooters = aliens.getChildren();
     let shooter = Phaser.Utils.Array.GetRandom(shooters);
@@ -152,19 +152,17 @@ function update(time, delta) {
 
   // Remove off-screen bullets (player)
   bullets.getChildren().forEach(bullet => {
-    if (bullet.y < 0) {
-      bullet.destroy();
-    }
+    if (bullet.y < 0) bullet.destroy();
   });
 
-  // Remove off-screen alien bullets
+  // Remove off-screen alien bullets & clear cooldown for them
   alienBullets.getChildren().forEach(bullet => {
     if (bullet.y > config.height) {
+      bulletLastHitTime.delete(bullet);
       bullet.destroy();
     }
   });
 
-  // Win condition
   if (aliens.countActive() === 0) {
     this.add.text(config.width / 2 - 70, config.height / 2, 'You Win!', { fontSize: '48px', fill: '#0f0' });
     this.scene.pause();
