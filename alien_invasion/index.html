@@ -89,14 +89,24 @@ function create() {
   });
 
   this.physics.add.overlap(alienBullets, ship, (bullet, hitship) => {
-    bullet.destroy();
-    lives -= 1;
-    livesText.setText('Lives: ' + lives);
-    if (lives <= 0) {
-      this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
-      this.scene.pause();
-    }
+  if (shipInvulnerable) return;
+
+  bullet.destroy();
+  lives -= 1;
+  livesText.setText('Lives: ' + lives);
+
+  shipInvulnerable = true;
+  ship.setTint(0xff0000); // red flash
+  this.time.delayedCall(1000, () => {
+    shipInvulnerable = false;
+    ship.clearTint();
   });
+
+  if (lives <= 0) {
+    this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
+    this.scene.pause();
+  }
+});
 
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
