@@ -45,17 +45,10 @@ function create() {
 
   cursors = this.input.keyboard.createCursorKeys();
 
-  bullets = this.physics.add.group({
-    classType: Phaser.Physics.Arcade.Image,
-    maxSize: 10,
-  });
-
-  alienBullets = this.physics.add.group({
-    classType: Phaser.Physics.Arcade.Image,
-    maxSize: 20,
-  });
-
+  bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 10 });
+  alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
   aliens = this.physics.add.group();
+
   for (let x = 100; x <= 700; x += 80) {
     for (let y = 50; y <= 150; y += 50) {
       aliens.create(x, y, 'alien').setScale(0.25);
@@ -71,19 +64,16 @@ function create() {
 
     shipInvulnerable = true;
 
-    // Flashing using tint
-    let flashTimes = 5;
-    let flashCounter = 0;
-    let flashInterval = this.time.addEvent({
-      delay: 100,
-      repeat: flashTimes * 2 - 1,
-      callback: () => {
-        ship.setVisible(!ship.visible);
-        flashCounter++;
-        if (flashCounter >= flashTimes * 2) {
-          ship.setVisible(true);
-          shipInvulnerable = false;
-        }
+    // Flash using alpha (visible true at all times)
+    this.tweens.add({
+      targets: ship,
+      alpha: 0.3,
+      yoyo: true,
+      repeat: 5,
+      duration: 100,
+      onComplete: () => {
+        ship.setAlpha(1);
+        shipInvulnerable = false;
       }
     });
 
@@ -117,7 +107,7 @@ function create() {
 }
 
 function update(time) {
-  if (!ship || !ship.body || !ship.visible) return;
+  if (!ship || !ship.body) return;
 
   ship.setVelocityX(
     cursors.left.isDown ? -300 :
