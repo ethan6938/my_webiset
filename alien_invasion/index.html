@@ -41,20 +41,27 @@ function preload() {
 function create() {
   ship = this.physics.add.sprite(450, 550, 'ship').setScale(0.3);
   ship.setCollideWorldBounds(true);
+  ship.setDepth(1);
 
   cursors = this.input.keyboard.createCursorKeys();
 
-  bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image });
-  alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image });
-  aliens = this.physics.add.group();
+  bullets = this.physics.add.group({
+    classType: Phaser.Physics.Arcade.Image,
+    maxSize: 10,
+  });
 
+  alienBullets = this.physics.add.group({
+    classType: Phaser.Physics.Arcade.Image,
+    maxSize: 20,
+  });
+
+  aliens = this.physics.add.group();
   for (let x = 100; x <= 700; x += 80) {
     for (let y = 50; y <= 150; y += 50) {
       aliens.create(x, y, 'alien').setScale(0.25);
     }
   }
 
-  // Handle ship being hit
   this.physics.add.overlap(alienBullets, ship, (bullet, hitship) => {
     if (shipInvulnerable) return;
 
@@ -62,29 +69,31 @@ function create() {
     lives--;
     livesText.setText('Lives: ' + lives);
 
-    if (lives <= 0) {
-      ship.disableBody(true, true); // Properly hide + disable ship
-      this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
-      this.scene.pause();
-      return;
-    }
-
-    // Start invulnerability & flashing effect (using alpha, not visibility)
     shipInvulnerable = true;
-    this.tweens.add({
-      targets: ship,
-      alpha: 0.2,
-      yoyo: true,
-      repeat: 5,
-      duration: 100,
-      onComplete: () => {
-        ship.setAlpha(1);
-        shipInvulnerable = false;
+
+    // Flashing using tint
+    let flashTimes = 5;
+    let flashCounter = 0;
+    let flashInterval = this.time.addEvent({
+      delay: 100,
+      repeat: flashTimes * 2 - 1,
+      callback: () => {
+        ship.setVisible(!ship.visible);
+        flashCounter++;
+        if (flashCounter >= flashTimes * 2) {
+          ship.setVisible(true);
+          shipInvulnerable = false;
+        }
       }
     });
+
+    if (lives <= 0) {
+      ship.setVisible(false);
+      this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
+      this.scene.pause();
+    }
   });
 
-  // Bullet hits alien
   this.physics.add.overlap(bullets, aliens, (bullet, alien) => {
     bullet.destroy();
     alien.destroy();
@@ -107,22 +116,22 @@ function create() {
   });
 }
 
-function update() {
-  // If ship is gone after game over, skip update
-  if (!ship.active) return;
+function update(time) {
+  if (!ship || !ship.body || !ship.visible) return;
 
-  // Movement
   ship.setVelocityX(
     cursors.left.isDown ? -300 :
     cursors.right.isDown ? 300 : 0
   );
 
-  // Alien movement
   let moveX = alienSpeed * alienMoveDirection * (1 / 60);
-  aliens.children.iterate(alien => { if (alien) alien.x += moveX; });
+  aliens.children.iterate((alien) => {
+    if (alien) alien.x += moveX;
+  });
 
   let leftMost = Math.min(...aliens.getChildren().map(a => a.x));
   let rightMost = Math.max(...aliens.getChildren().map(a => a.x));
+
   if (rightMost > 850) {
     alienMoveDirection = -1;
     aliens.children.iterate(a => a.y += 10);
@@ -131,7 +140,6 @@ function update() {
     aliens.children.iterate(a => a.y += 10);
   }
 
-  // Alien shoots
   alienShootTimer += this.game.loop.delta;
   if (alienShootTimer > 1500) {
     alienShootTimer = 0;
@@ -148,10 +156,14 @@ function update() {
     }
   }
 
-  bullets.children.iterate(b => { if (b && b.active && b.y < 0) b.destroy(); });
-  alienBullets.children.iterate(b => { if (b && b.active && b.y > 600) b.destroy(); });
+  bullets.children.iterate((b) => {
+    if (b && b.active && b.y < 0) b.destroy();
+  });
 
-  // Win condition
+  alienBullets.children.iterate((b) => {
+    if (b && b.active && b.y > 600) b.destroy();
+  });
+
   if (aliens.countActive() === 0) {
     this.add.text(300, 300, 'You Win!', { fontSize: '48px', fill: '#0f0' });
     this.scene.pause();
