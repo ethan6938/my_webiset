@@ -18,15 +18,9 @@ const config = {
   backgroundColor: '#000000',
   physics: {
     default: 'arcade',
-    arcade: {
-      debug: false,
-    },
+    arcade: { debug: false },
   },
-  scene: {
-    preload,
-    create,
-    update,
-  },
+  scene: { preload, create, update },
 };
 
 let ship, cursors, bullets, aliens, alienBullets;
@@ -42,36 +36,26 @@ function preload() {
   this.load.image('alien', 'images/alien.png');
   this.load.image('bullet', 'images/bullet.png');
   this.load.image('alienBullet', 'images/alienbullet.png');
-
-  this.load.on('loaderror', (file) => {
-    console.error('❌ Failed to load:', file.key, file.src);
-  });
-
-  this.load.on('complete', () => {
-    console.log('✅ All assets loaded');
-  });
 }
 
 function create() {
   ship = this.physics.add.sprite(450, 550, 'ship').setScale(0.3);
   ship.setCollideWorldBounds(true);
+  ship.setDepth(1);
 
   cursors = this.input.keyboard.createCursorKeys();
 
   bullets = this.physics.add.group({
     classType: Phaser.Physics.Arcade.Image,
     maxSize: 10,
-    runChildUpdate: true,
   });
 
   alienBullets = this.physics.add.group({
     classType: Phaser.Physics.Arcade.Image,
     maxSize: 20,
-    runChildUpdate: true,
   });
 
   aliens = this.physics.add.group();
-
   for (let x = 100; x <= 700; x += 80) {
     for (let y = 50; y <= 150; y += 50) {
       aliens.create(x, y, 'alien').setScale(0.25);
@@ -87,23 +71,25 @@ function create() {
 
     shipInvulnerable = true;
 
-    // Blink effect for invulnerability
-    this.tweens.add({
-      targets: ship,
-      alpha: 0.3,
-      yoyo: true,
-      repeat: 5,
-      duration: 100,
-      onComplete: () => {
-        ship.setAlpha(1);
-        shipInvulnerable = false;
+    // Flashing using tint
+    let flashTimes = 5;
+    let flashCounter = 0;
+    let flashInterval = this.time.addEvent({
+      delay: 100,
+      repeat: flashTimes * 2 - 1,
+      callback: () => {
+        ship.setVisible(!ship.visible);
+        flashCounter++;
+        if (flashCounter >= flashTimes * 2) {
+          ship.setVisible(true);
+          shipInvulnerable = false;
+        }
       }
     });
 
-    // Game Over
     if (lives <= 0) {
-      this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
       ship.setVisible(false);
+      this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
       this.scene.pause();
     }
   });
@@ -111,7 +97,6 @@ function create() {
   this.physics.add.overlap(bullets, aliens, (bullet, alien) => {
     bullet.destroy();
     alien.destroy();
-
     score += 10;
     scoreText.setText('Score: ' + score);
   });
@@ -132,30 +117,21 @@ function create() {
 }
 
 function update(time) {
-  if (!ship || !ship.body) return;
+  if (!ship || !ship.body || !ship.visible) return;
 
-  // Extra safeguard to keep ship visible
-  if (!ship.visible) ship.setVisible(true);
-  if (!ship.active) ship.setActive(true);
+  ship.setVelocityX(
+    cursors.left.isDown ? -300 :
+    cursors.right.isDown ? 300 : 0
+  );
 
-  // Ship movement
-  if (cursors.left.isDown) {
-    ship.setVelocityX(-300);
-  } else if (cursors.right.isDown) {
-    ship.setVelocityX(300);
-  } else {
-    ship.setVelocityX(0);
-  }
-
-  // Move aliens
   let moveX = alienSpeed * alienMoveDirection * (1 / 60);
   aliens.children.iterate((alien) => {
-    if (!alien) return;
-    alien.x += moveX;
+    if (alien) alien.x += moveX;
   });
 
   let leftMost = Math.min(...aliens.getChildren().map(a => a.x));
   let rightMost = Math.max(...aliens.getChildren().map(a => a.x));
+
   if (rightMost > 850) {
     alienMoveDirection = -1;
     aliens.children.iterate(a => a.y += 10);
@@ -167,9 +143,9 @@ function update(time) {
   alienShootTimer += this.game.loop.delta;
   if (alienShootTimer > 1500) {
     alienShootTimer = 0;
-    let shootingAlien = Phaser.Utils.Array.GetRandom(aliens.getChildren());
-    if (shootingAlien) {
-      let bullet = alienBullets.get(shootingAlien.x, shootingAlien.y + 20, 'alienBullet');
+    let shooter = Phaser.Utils.Array.GetRandom(aliens.getChildren());
+    if (shooter) {
+      let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
       if (bullet) {
         bullet.setActive(true);
         bullet.setVisible(true);
@@ -181,12 +157,11 @@ function update(time) {
   }
 
   bullets.children.iterate((b) => {
-    if (!b) return;
-    if (b.active && b.y < 0) b.destroy();
+    if (b && b.active && b.y < 0) b.destroy();
   });
+
   alienBullets.children.iterate((b) => {
-    if (!b) return;
-    if (b.active && b.y > 600) b.destroy();
+    if (b && b.active && b.y > 600) b.destroy();
   });
 
   if (aliens.countActive() === 0) {
