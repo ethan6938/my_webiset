@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Alien Invasion</title>
 
-  <!-- Load Phaser BEFORE your game script -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 
   <style>
@@ -72,7 +71,7 @@
   function create() {
     scene = this;
 
-    ship = this.physics.add.sprite(250, 500, 'ship').setScale(0.2);
+    ship = this.physics.add.sprite(450, 550, 'ship').setScale(0.2);
     ship.setCollideWorldBounds(true);
 
     cursors = this.input.keyboard.createCursorKeys();
@@ -110,24 +109,13 @@
       }
     });
 
-    // Restart button setup
     restartButton = document.getElementById('restartBtn');
     restartButton.style.display = 'none';
     restartButton.onclick = () => {
-      score = 0;
-      lives = 3;
-      level = 1;
-      alienSpeed = 20;
-      alienShootTimer = 0;
-      shipInvulnerable = false;
+      resetGame();
+      restartButton.style.display = 'none';
       gameOverText && gameOverText.destroy();
       gameOverText = null;
-      restartButton.style.display = 'none';
-      scoreText.setText('Score: 0');
-      livesText.setText('Lives: 3');
-      levelText.setText('Level: 1');
-      aliens.clear(true, true);
-      createAliens();
       scene.scene.resume();
     };
   }
@@ -144,20 +132,41 @@
 
     // Aliens move
     let moveX = alienSpeed * alienMoveDirection * (1 / 60);
-    aliens.children.iterate(alien => alien.x += moveX);
+    aliens.children.iterate(alien => {
+      if (alien.active) alien.x += moveX;
+    });
 
-    let leftMost = Math.min(...aliens.getChildren().map(a => a.x));
-    let rightMost = Math.max(...aliens.getChildren().map(a => a.x));
+    let activeAliens = aliens.getChildren().filter(a => a.active);
+    if (activeAliens.length === 0) {
+      // All aliens destroyed, go to next level or end game
+      if (level < maxLevel) {
+        level++;
+        levelText.setText('Level: ' + level);
+        alienSpeed += 5;
+        alienMoveDirection = 1;  // reset direction on new level
+        scene.time.delayedCall(1000, () => {
+          createAliens();
+        });
+      } else {
+        endGame(true);
+      }
+      return; // prevent further update this frame
+    }
+
+    let leftMost = Math.min(...activeAliens.map(a => a.x));
+    let rightMost = Math.max(...activeAliens.map(a => a.x));
     if (rightMost > 850 || leftMost < 50) {
       alienMoveDirection *= -1;
-      aliens.children.iterate(a => a.y += 10);
+      aliens.children.iterate(a => {
+        if (a.active) a.y += 10;
+      });
     }
 
     // Alien shooting
     alienShootTimer += scene.game.loop.delta;
     if (alienShootTimer > (2000 - level * 200)) {
       alienShootTimer = 0;
-      let shooter = Phaser.Utils.Array.GetRandom(aliens.getChildren());
+      let shooter = Phaser.Utils.Array.GetRandom(activeAliens);
       if (shooter) {
         let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
         if (bullet) {
@@ -173,21 +182,6 @@
     // Destroy off-screen bullets
     bullets.children.iterate(b => b && b.y < 0 && b.destroy());
     alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
-
-    // Check if all aliens are destroyed (level complete)
-    if (aliens.countActive() === 0) {
-      if (level < maxLevel) {
-        level++;
-        levelText.setText('Level: ' + level);
-        alienSpeed += 5;  // moderate speed increase each level
-        scene.time.delayedCall(1000, () => {
-          createAliens();
-        });
-      } else {
-        // Player wins after level 5
-        endGame(true);
-      }
-    }
   }
 
   function createAliens() {
@@ -202,6 +196,7 @@
   function handleShipHit(bullet, hitship) {
     if (shipInvulnerable) return;
 
+
     lives -= 1;
     livesText.setText('Lives: ' + lives);
 
@@ -212,7 +207,6 @@
       shipInvulnerable = false;
       hitship.clearTint();
     });
-
 
     if (lives <= 0) {
       bullet.destroy();
@@ -236,6 +230,21 @@
     gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
 
     restartButton.style.display = 'block';
+  }
+
+  function resetGame() {
+    score = 0;
+    lives = 3;
+    level = 1;
+    alienSpeed = 20;
+    alienShootTimer = 0;
+    shipInvulnerable = false;
+    scoreText.setText('Score: 0');
+    livesText.setText('Lives: 3');
+    levelText.setText('Level: 1');
+    alienMoveDirection = 1;
+    aliens.clear(true, true);
+    createAliens();
   }
 
   new Phaser.Game(config);
