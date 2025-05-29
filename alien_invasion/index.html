@@ -47,6 +47,7 @@
   let alienMoveDirection, alienSpeed, alienShootTimer;
   let shipInvulnerable, scene, gameOverText;
   let restartButton;
+  let levelInProgress = true;
 
   function preload() {
     this.load.image('ship', 'images/ship.png');
@@ -57,7 +58,7 @@
 
   function create() {
     scene = this;
-    initGame();
+    resetGameVariables();
 
     ship = this.physics.add.sprite(250, 500, 'ship').setScale(0.2);
     ship.setCollideWorldBounds(true);
@@ -92,7 +93,7 @@
     };
   }
 
-  function initGame() {
+  function resetGameVariables() {
     score = 0;
     lives = 3;
     level = 1;
@@ -101,6 +102,7 @@
     alienShootTimer = 0;
     shipInvulnerable = false;
     gameOverText = null;
+    levelInProgress = true;
   }
 
   function update() {
@@ -139,16 +141,19 @@
     bullets.children.iterate(b => b && b.y < 0 && b.destroy());
     alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
 
-    if (aliens.countActive(true) === 0) {
+    // Level progress check
+    if (aliens.countActive() === 0 && levelInProgress) {
+      levelInProgress = false;
       if (level < maxLevel) {
         level++;
-        alienSpeed += 10;
         levelText.setText('Level: ' + level);
+        alienSpeed += 10;
         scene.time.delayedCall(1000, () => {
           createAliens();
+          levelInProgress = true;
         });
       } else {
-        endGame(true);
+        scene.time.delayedCall(500, () => endGame(true));
       }
     }
   }
