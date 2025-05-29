@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Alien Invasion</title>
-
-  <!-- Load Phaser BEFORE your game script -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-
   <style>
     body { margin: 0; background-color: black; }
     canvas { display: block; margin: 0 auto; }
@@ -14,7 +11,6 @@
 </head>
 <body>
 
-  <!-- Your game script -->
   <script>
     const config = {
       type: Phaser.AUTO,
@@ -111,7 +107,7 @@
       }
 
       alienShootTimer += scene.game.loop.delta;
-      if (alienShootTimer > (2000 - level * 200)) {
+      if (alienShootTimer > (2500 - level * 200)) {
         alienShootTimer = 0;
         let shooter = Phaser.Utils.Array.GetRandom(aliens.getChildren());
         if (shooter) {
@@ -121,7 +117,7 @@
             bullet.setVisible(true);
             bullet.body.enable = true;
             bullet.setScale(0.1);
-            bullet.body.velocity.y = 300 + (level * 20);
+            bullet.body.velocity.y = 200 + (level * 15);
           }
         }
       }
@@ -130,10 +126,15 @@
       alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
 
       if (aliens.countActive() === 0) {
-        level++;
-        levelText.setText('Level: ' + level);
-        alienSpeed += 10;
-        scene.time.delayedCall(1000, createAliens);
+        if (level < 5) {
+          level++;
+          levelText.setText('Level: ' + level);
+          alienSpeed += 5;
+          scene.time.delayedCall(1000, createAliens);
+        } else {
+          scene.add.text(300, 300, 'You Win!', { fontSize: '48px', fill: '#0f0' });
+          scene.scene.pause();
+        }
       }
     }
 
@@ -159,7 +160,6 @@
         hitship.clearTint();
       });
 
-      // bullet.destroy();
 
       if (lives <= 0) {
         bullet.destroy();
@@ -177,5 +177,6 @@
 
     new Phaser.Game(config);
   </script>
+
 </body>
 </html>
