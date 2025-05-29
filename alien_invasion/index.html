@@ -57,7 +57,7 @@
 
   function create() {
     scene = this;
-    resetGameVariables();
+    initGame();
 
     ship = this.physics.add.sprite(250, 500, 'ship').setScale(0.2);
     ship.setCollideWorldBounds(true);
@@ -88,24 +88,11 @@
     restartButton = document.getElementById('restartBtn');
     restartButton.style.display = 'none';
     restartButton.onclick = () => {
-      resetGameVariables();
-      ship.setTint(0xffffff);
-      ship.setPosition(250, 500);
-      aliens.clear(true, true);
-      bullets.clear(true, true);
-      alienBullets.clear(true, true);
-      scoreText.setText('Score: 0');
-      livesText.setText('Lives: 3');
-      levelText.setText('Level: 1');
-      createAliens();
-      scene.scene.resume();
-      if (gameOverText) gameOverText.destroy();
-      gameOverText = null;
-      restartButton.style.display = 'none';
+      scene.scene.restart();
     };
   }
 
-  function resetGameVariables() {
+  function initGame() {
     score = 0;
     lives = 3;
     level = 1;
@@ -152,12 +139,14 @@
     bullets.children.iterate(b => b && b.y < 0 && b.destroy());
     alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
 
-    if (aliens.countActive() === 0) {
+    if (aliens.countActive(true) === 0) {
       if (level < maxLevel) {
         level++;
-        levelText.setText('Level: ' + level);
         alienSpeed += 10;
-        createAliens();
+        levelText.setText('Level: ' + level);
+        scene.time.delayedCall(1000, () => {
+          createAliens();
+        });
       } else {
         endGame(true);
       }
@@ -187,9 +176,9 @@
     });
 
     if (lives <= 0) {
-  bullet.destroy();
-  endGame(false);
-}
+      bullet.destroy();
+      endGame(false);
+    }
   }
 
   function handleAlienHit(bullet, alien) {
