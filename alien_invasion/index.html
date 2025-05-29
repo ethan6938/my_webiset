@@ -159,9 +159,10 @@
         hitship.clearTint();
       });
 
-      bullet.destroy();
+      // bullet.destroy();
 
       if (lives <= 0) {
+        bullet.destroy();
         scene.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
         scene.scene.pause();
       }
