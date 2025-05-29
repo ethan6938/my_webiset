@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Alien Invasion</title>
-
-  <!-- Load Phaser -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-
   <style>
     body { margin: 0; background-color: black; }
     canvas { display: block; margin: 0 auto; }
@@ -42,6 +39,7 @@
   let shipInvulnerable = false;
   let scene;
   let levelInProgress = true;
+  let restartButton;
 
   function preload() {
     this.load.image('ship', 'images/ship.png');
@@ -52,6 +50,7 @@
 
   function create() {
     scene = this;
+    levelInProgress = true;
 
     ship = this.physics.add.sprite(250, 500, 'ship').setScale(0.2);
     ship.setCollideWorldBounds(true);
@@ -92,7 +91,7 @@
     });
   }
 
-  function update(time) {
+  function update() {
     if (!ship || !ship.body || !levelInProgress) return;
 
     ship.setVelocityX(
@@ -111,7 +110,7 @@
     }
 
     alienShootTimer += scene.game.loop.delta;
-    if (alienShootTimer > (2500 - level * 200)) {
+    if (alienShootTimer > (2500 - level * 300)) {
       alienShootTimer = 0;
       let shooter = Phaser.Utils.Array.GetRandom(aliens.getChildren());
       if (shooter) {
@@ -121,7 +120,7 @@
           bullet.setVisible(true);
           bullet.body.enable = true;
           bullet.setScale(0.1);
-          bullet.body.velocity.y = 200 + (level * 15);
+          bullet.body.velocity.y = 200 + (level * 30); // gets faster per level
         }
       }
     }
@@ -129,14 +128,13 @@
     bullets.children.iterate(b => b && b.y < 0 && b.destroy());
     alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
 
-    // Check for level completion
     if (aliens.countActive() === 0 && levelInProgress) {
       levelInProgress = false;
 
       if (level < 5) {
         level++;
         levelText.setText('Level: ' + level);
-        alienSpeed += 5;
+        alienSpeed += 10;
 
         scene.time.delayedCall(1000, () => {
           aliens.clear(true, true);
@@ -144,8 +142,7 @@
           levelInProgress = true;
         });
       } else {
-        scene.add.text(300, 300, 'You Win!', { fontSize: '48px', fill: '#0f0' });
-        scene.scene.pause();
+        endGame("You Win!");
       }
     }
   }
@@ -172,12 +169,10 @@
       hitship.clearTint();
     });
 
-
+    bullet.destroy();
 
     if (lives <= 0) {
-      bullet.destroy();
-      scene.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
-      scene.scene.pause();
+      endGame("Game Over!");
     }
   }
 
@@ -186,6 +181,31 @@
     alien.destroy();
     score += 10;
     scoreText.setText('Score: ' + score);
+  }
+
+  function endGame(message) {
+    levelInProgress = false;
+    scene.add.text(300, 300, message, { fontSize: '48px', fill: message === "Game Over!" ? '#f00' : '#0f0' });
+
+    restartButton = scene.add.text(360, 370, 'Restart', {
+      fontSize: '32px',
+      fill: '#fff',
+      backgroundColor: '#444',
+      padding: { x: 10, y: 5 },
+    }).setInteractive();
+
+    restartButton.on('pointerdown', () => {
+      // Reset values
+      score = 0;
+      lives = 3;
+      level = 1;
+      alienSpeed = 20;
+      alienShootTimer = 0;
+
+      scene.scene.restart();
+    });
+
+    scene.scene.pause();
   }
 
   new Phaser.Game(config);
