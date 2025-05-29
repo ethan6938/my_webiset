@@ -188,22 +188,27 @@
     scene.add.text(300, 300, message, { fontSize: '48px', fill: message === "Game Over!" ? '#f00' : '#0f0' });
 
     restartButton = scene.add.text(360, 370, 'Restart', {
-      fontSize: '32px',
-      fill: '#fff',
-      backgroundColor: '#444',
-      padding: { x: 10, y: 5 },
-    }).setInteractive();
+  fontSize: '32px',
+  fill: '#fff',
+  backgroundColor: '#444',
+  padding: { x: 10, y: 5 },
+}).setInteractive();
 
-    restartButton.on('pointerdown', () => {
-      // Reset values
-      score = 0;
-      lives = 3;
-      level = 1;
-      alienSpeed = 20;
-      alienShootTimer = 0;
+restartButton.on('pointerdown', () => {
+  // Reset global values
+  score = 0;
+  lives = 3;
+  level = 1;
+  alienSpeed = 20;
+  alienShootTimer = 0;
+  shipInvulnerable = false;
+  alienMoveDirection = 1;
 
-      scene.scene.restart();
-    });
+  // Restart scene safely
+  scene.scene.stop();
+  scene.scene.start();
+});
+
 
     scene.scene.pause();
   }
