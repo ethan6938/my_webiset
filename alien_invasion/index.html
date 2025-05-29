@@ -75,7 +75,7 @@ function create() {
   // Create aliens in a grid
   for (let x = 100; x <= 700; x += 80) {
     for (let y = 50; y <= 150; y += 50) {
-      aliens.create(x, y, 'alien').setScale(0.25);
+      aliens.create(x, y, 'alien').setScale(0.10);
     }
   }
 
@@ -125,7 +125,7 @@ function create() {
       bullet.setActive(true);
       bullet.setVisible(true);
       bullet.body.enable = true;
-      bullet.setScale(0.3);
+      bullet.setScale(0.2);
       bullet.body.velocity.y = -400;
     }
 
@@ -176,7 +176,7 @@ function update(time) {
         bullet.setActive(true);
         bullet.setVisible(true);
         bullet.body.enable = true;
-        bullet.setScale(0.3);
+        bullet.setScale(0.2);
         bullet.body.velocity.y = 300;
       }
     }
