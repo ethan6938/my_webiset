@@ -4,31 +4,27 @@
   <meta charset="UTF-8" />
   <title>Alien Invasion</title>
 
-  <!-- Load Phaser BEFORE your game script -->
+  <!-- Load Phaser -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 
   <style>
     body { margin: 0; background-color: black; }
     canvas { display: block; margin: 0 auto; }
-    #restartBtn {
-      position: absolute;
-      top: 80px;
-      left: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #222;
-      color: white;
-      border: 2px solid white;
-      cursor: pointer;
-      user-select: none;
+    #restartButton {
       display: none;
-      z-index: 10;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      font-size: 20px;
+      padding: 10px 20px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-<button id="restartBtn">Restart Game</button>
+<button id="restartButton">Restart</button>
 
 <script>
   const maxLevel = 5;
@@ -59,20 +55,18 @@
   let alienShootTimer = 0;
   let shipInvulnerable = false;
   let scene;
-  let gameOverText;
-  let restartButton;
 
   function preload() {
-    this.load.image('ship', 'images/ship.png');
-    this.load.image('alien', 'images/alien.png');
-    this.load.image('bullet', 'images/bullet.png');
-    this.load.image('alienBullet', 'images/alienbullet.png');
+    this.load.image('ship', 'https://raw.githubusercontent.com/samme/phaser3-projects/master/space-shooter/assets/ship.png');
+    this.load.image('alien', 'https://raw.githubusercontent.com/samme/phaser3-projects/master/space-shooter/assets/enemy.png');
+    this.load.image('bullet', 'https://raw.githubusercontent.com/samme/phaser3-projects/master/space-shooter/assets/bullet.png');
+    this.load.image('alienBullet', 'https://raw.githubusercontent.com/samme/phaser3-projects/master/space-shooter/assets/enemy-bullet.png');
   }
 
   function create() {
     scene = this;
 
-    ship = this.physics.add.sprite(250, 500, 'ship').setScale(0.2);
+    ship = this.physics.add.sprite(450, 550, 'ship').setScale(0.5);
     ship.setCollideWorldBounds(true);
 
     cursors = this.input.keyboard.createCursorKeys();
@@ -105,36 +99,22 @@
         bullet.setActive(true);
         bullet.setVisible(true);
         bullet.body.enable = true;
-        bullet.setScale(0.2);
+        bullet.setScale(0.3);
         bullet.body.velocity.y = -400;
       }
     });
 
-    // Restart button setup
-    restartButton = document.getElementById('restartBtn');
-    restartButton.style.display = 'none';
-    restartButton.onclick = () => {
-      score = 0;
-      lives = 3;
-      level = 1;
-      alienSpeed = 20;
-      alienShootTimer = 0;
-      shipInvulnerable = false;
-      gameOverText && gameOverText.destroy();
-      gameOverText = null;
-      restartButton.style.display = 'none';
-      scoreText.setText('Score: 0');
-      livesText.setText('Lives: 3');
-      levelText.setText('Level: 1');
-      aliens.clear(true, true);
-      createAliens();
-      scene.scene.resume();
+    // Restart button
+    const restartBtn = document.getElementById('restartButton');
+    restartBtn.onclick = () => {
+      restartBtn.style.display = 'none';
+      resetGame();
+      scene.scene.restart();
     };
   }
 
-  function update() {
+  function update(time) {
     if (!ship || !ship.body) return;
-    if (gameOverText) return; // pause updates on game over or win
 
     // Ship movement
     ship.setVelocityX(
@@ -142,49 +122,51 @@
       cursors.right.isDown ? 300 : 0
     );
 
-    // Aliens move
+    // Alien movement
     let moveX = alienSpeed * alienMoveDirection * (1 / 60);
-    aliens.children.iterate(alien => alien.x += moveX);
+    aliens.children.iterate(alien => {
+      if (alien.active) alien.x += moveX;
+    });
 
-    let leftMost = Math.min(...aliens.getChildren().map(a => a.x));
-    let rightMost = Math.max(...aliens.getChildren().map(a => a.x));
+    let leftMost = Math.min(...aliens.getChildren().filter(a => a.active).map(a => a.x));
+    let rightMost = Math.max(...aliens.getChildren().filter(a => a.active).map(a => a.x));
     if (rightMost > 850 || leftMost < 50) {
       alienMoveDirection *= -1;
-      aliens.children.iterate(a => a.y += 10);
+      aliens.children.iterate(a => {
+        if (a.active) a.y += 10;
+      });
     }
 
     // Alien shooting
     alienShootTimer += scene.game.loop.delta;
     if (alienShootTimer > (2000 - level * 200)) {
       alienShootTimer = 0;
-      let shooter = Phaser.Utils.Array.GetRandom(aliens.getChildren());
+      let shooters = aliens.getChildren().filter(a => a.active);
+      let shooter = Phaser.Utils.Array.GetRandom(shooters);
       if (shooter) {
         let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
         if (bullet) {
           bullet.setActive(true);
           bullet.setVisible(true);
           bullet.body.enable = true;
-          bullet.setScale(0.1);
+          bullet.setScale(0.2);
           bullet.body.velocity.y = 300 + (level * 20);
         }
       }
     }
 
-    // Destroy off-screen bullets
-    bullets.children.iterate(b => b && b.y < 0 && b.destroy());
-    alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
+    // Destroy bullets off screen
+    bullets.children.iterate(b => { if (b.active && b.y < 0) b.destroy(); });
+    alienBullets.children.iterate(b => { if (b.active && b.y > 600) b.destroy(); });
 
-    // Check if all aliens are destroyed (level complete)
+    // Check for level completion
     if (aliens.countActive() === 0) {
       if (level < maxLevel) {
         level++;
         levelText.setText('Level: ' + level);
-        alienSpeed += 5;  // moderate speed increase each level
-        scene.time.delayedCall(1000, () => {
-          createAliens();
-        });
+        alienSpeed += 5;  // slight speed increase each level
+        scene.time.delayedCall(1000, createAliens);
       } else {
-        // Player wins after level 5
         endGame(true);
       }
     }
@@ -194,7 +176,7 @@
     aliens.clear(true, true);
     for (let x = 100; x <= 700; x += 80) {
       for (let y = 50; y <= 150; y += 50) {
-        aliens.create(x, y, 'alien').setScale(0.05);
+        aliens.create(x, y, 'alien').setScale(0.3);
       }
     }
   }
@@ -202,7 +184,7 @@
   function handleShipHit(bullet, hitship) {
     if (shipInvulnerable) return;
 
-    lives -= 1;
+    lives--;
     livesText.setText('Lives: ' + lives);
 
     shipInvulnerable = true;
@@ -212,7 +194,6 @@
       shipInvulnerable = false;
       hitship.clearTint();
     });
-
 
     if (lives <= 0) {
       bullet.destroy();
@@ -228,18 +209,30 @@
   }
 
   function endGame(won) {
+    const msg = won ? 'You Win!' : 'Game Over!';
+    const color = won ? '#0f0' : '#f00';
+
+    scene.add.text(300, 300, msg, { fontSize: '48px', fill: color });
     scene.scene.pause();
 
-    let message = won ? 'You Win! 🎉' : 'Game Over!';
-    let color = won ? '#0f0' : '#f00';
+    // Show restart button
+    const restartBtn = document.getElementById('restartButton');
+    restartBtn.style.display = 'block';
+  }
 
-    gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
+  function resetGame() {
+    score = 0;
+    lives = 3;
+    level = 1;
+    alienSpeed = 20;
+    alienShootTimer = 0;
 
-    restartButton.style.display = 'block';
+    scoreText.setText('Score: ' + score);
+    livesText.setText('Lives: ' + lives);
+    levelText.setText('Level: ' + level);
   }
 
   new Phaser.Game(config);
 </script>
-
 </body>
 </html>
