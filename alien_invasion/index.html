@@ -87,7 +87,7 @@ function create() {
     console.log('Ship position:', ship.x, ship.y);
 
 
-    bullet.destroy();
+    // bullet.destroy();
     lives -= 1;
     livesText.setText('Lives: ' + lives);
 
@@ -100,6 +100,7 @@ function create() {
     });
 
     if (lives <= 0) {
+      bullet.destroy();
       this.add.text(300, 300, 'Game Over!', { fontSize: '48px', fill: '#f00' });
       this.scene.pause();
     }
