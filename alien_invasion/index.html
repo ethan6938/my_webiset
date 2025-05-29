@@ -198,6 +198,8 @@ function restartGame() {
   gameOverText = null;
   restartButton.style.display = 'none';
 
+  bullet.destroy();
+
   scoreText.setText('Score: 0');
   livesText.setText('Lives: 3');
   levelText.setText('Level: 1');
