@@ -173,9 +173,12 @@
       hitship.clearTint();
     });
 
-    if (lives <= 0) endGame(false);
-    bullet.destroy();
+    if (lives <= 0) {
+  bullet.destroy();
+  endGame(false);
+}
   }
+
 
   function handleAlienHit(bullet, alien) {
     bullet.destroy();
@@ -197,3 +200,16 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+f (lives <= 0) {
+  bullet.destroy();
+  endGame(false);
+}
