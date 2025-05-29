@@ -41,6 +41,7 @@
   let alienShootTimer = 0;
   let shipInvulnerable = false;
   let scene;
+  let levelInProgress = true;
 
   function preload() {
     this.load.image('ship', 'images/ship.png');
@@ -92,7 +93,7 @@
   }
 
   function update(time) {
-    if (!ship || !ship.body) return;
+    if (!ship || !ship.body || !levelInProgress) return;
 
     ship.setVelocityX(
       cursors.left.isDown ? -300 :
@@ -128,13 +129,21 @@
     bullets.children.iterate(b => b && b.y < 0 && b.destroy());
     alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
 
-    if (aliens.countActive() === 0) {
+    // Check for level completion
+    if (aliens.countActive() === 0 && levelInProgress) {
+      levelInProgress = false;
+
       if (level < 5) {
         level++;
         levelText.setText('Level: ' + level);
         alienSpeed += 5;
-        scene.time.delayedCall(1000, createAliens);
-      } else if (level === 5) {
+
+        scene.time.delayedCall(1000, () => {
+          aliens.clear(true, true);
+          createAliens();
+          levelInProgress = true;
+        });
+      } else {
         scene.add.text(300, 300, 'You Win!', { fontSize: '48px', fill: '#0f0' });
         scene.scene.pause();
       }
