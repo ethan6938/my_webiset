@@ -88,7 +88,20 @@
     restartButton = document.getElementById('restartBtn');
     restartButton.style.display = 'none';
     restartButton.onclick = () => {
-      scene.scene.restart();
+      resetGameVariables();
+      ship.setTint(0xffffff);
+      ship.setPosition(250, 500);
+      aliens.clear(true, true);
+      bullets.clear(true, true);
+      alienBullets.clear(true, true);
+      scoreText.setText('Score: 0');
+      livesText.setText('Lives: 3');
+      levelText.setText('Level: 1');
+      createAliens();
+      scene.scene.resume();
+      if (gameOverText) gameOverText.destroy();
+      gameOverText = null;
+      restartButton.style.display = 'none';
     };
   }
 
@@ -144,7 +157,7 @@
         level++;
         levelText.setText('Level: ' + level);
         alienSpeed += 10;
-        scene.time.delayedCall(1000, createAliens);
+        createAliens();
       } else {
         endGame(true);
       }
@@ -179,7 +192,6 @@
 }
   }
 
-
   function handleAlienHit(bullet, alien) {
     bullet.destroy();
     alien.destroy();
@@ -200,16 +212,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-f (lives <= 0) {
-  bullet.destroy();
-  endGame(false);
-}
