@@ -169,9 +169,9 @@
       hitship.clearTint();
     });
 
-    bullet.destroy();
 
     if (lives <= 0) {
+      bullet.destroy();
       endGame("Game Over!");
     }
   }
