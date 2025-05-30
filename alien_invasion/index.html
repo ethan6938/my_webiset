@@ -41,7 +41,8 @@ const config = {
   scene: { preload, create, update },
 };
 
-let ship, cursors, bullets, aliens, alienBullets, powerUpGroup, boss;
+let bossGroup;
+let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
 let score, lives, level;
 let scoreText, livesText, levelText;
 let alienMoveDirection, alienSpeed, alienShootTimer;
@@ -77,8 +78,10 @@ function create() {
 
   this.physics.add.overlap(alienBullets, ship, handleShipHit);
   this.physics.add.overlap(bullets, aliens, handleAlienHit);
-  this.physics.add.overlap(bullets, boss, handleBossHit);
   this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
+
+  bossGroup = this.physics.add.group();
+  this.physics.add.overlap(bullets, bossGroup, handleBossHit);
 
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
@@ -225,8 +228,7 @@ function collectPowerUp(ship, powerUp) {
 
 function spawnBoss() {
   bossActive = true;
-  boss = scene.physics.add.sprite(450, 100, 'boss').setScale(0.2);
-  scene.physics.add.overlap(bullets, boss, handleBossHit);
+  boss = bossGroup.create(450, 100, 'boss').setScale(0.2); // ✅ Create in group
   levelText.setText('Boss Level!');
   dropPowerUp();
   scene.time.delayedCall(3000, () => dropPowerUp());
