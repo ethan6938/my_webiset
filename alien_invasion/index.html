@@ -47,7 +47,7 @@ let scoreText, livesText, levelText;
 let alienMoveDirection, alienSpeed, alienShootTimer;
 let shipInvulnerable, scene, gameOverText, restartButton;
 let levelInProgress = true;
-let bossHealth = 90;
+let bossHealth = 900;
 let bossActive = false;
 let lastBossReinforce = 90;
 
@@ -112,7 +112,7 @@ function resetGameVariables() {
   gameOverText = null;
   levelInProgress = true;
   bossActive = false;
-  bossHealth = 90;
+  bossHealth = 900;
   lastBossReinforce = 90;
 }
 
@@ -233,14 +233,15 @@ function spawnBoss() {
 }
 
 function handleBossHit(bullet, bossSprite) {
-  bullet.destroy();
+  bullet.destroy(); // Always destroy the bullet
+
   bossHealth -= 10;
 
   if (bossHealth <= 0) {
     bossSprite.destroy();
     endGame(true);
   } else if (bossHealth <= lastBossReinforce - 30) {
-    createAliens(); // Reinforcements
+    createAliens(); // Reinforcements every 30 health lost
     lastBossReinforce = bossHealth;
   }
 }
