@@ -123,36 +123,46 @@ function resetGameVariables() {
 function update() {
   if (!ship || !ship.body || gameOverText) return;
 
+  // Ship movement left/right
   ship.setVelocityX(
     cursors.left.isDown ? -300 :
     cursors.right.isDown ? 300 : 0
   );
 
   if (bossActive && boss && boss.active) {
+    // Boss moves left and right smoothly
     boss.x += alienMoveDirection * 2;
     if (boss.x >= 850 || boss.x <= 50) {
       alienMoveDirection *= -1;
     }
 
+    // Update boss health bar position
     bossHealthBarBg.setPosition(boss.x, boss.y - 50);
     bossHealthBar.setPosition(boss.x - 80, boss.y - 50);
     bossHealthText.setPosition(boss.x, boss.y - 50);
   } else {
+    // Move aliens in formation
     let moveX = alienSpeed * alienMoveDirection * (1 / 60);
-    aliens.children.iterate(alien => alien.x += moveX);
+    aliens.children.iterate(alien => {
+      if (alien.active) alien.x += moveX;
+    });
 
+    // Check bounds for aliens and move down
     let xs = aliens.getChildren().map(a => a.x);
     let leftMost = Math.min(...xs), rightMost = Math.max(...xs);
     if (rightMost > 850 || leftMost < 50) {
       alienMoveDirection *= -1;
-      aliens.children.iterate(a => a.y += 10);
+      aliens.children.iterate(a => {
+        if (a.active) a.y += 10;
+      });
     }
   }
 
+  // Alien shooting timer
   alienShootTimer += scene.game.loop.delta;
   if (alienShootTimer > (2000 - level * 200)) {
     alienShootTimer = 0;
-    let shooter = bossActive && boss.active ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
+    let shooter = bossActive && boss && boss.active ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren().filter(a => a.active));
     if (shooter) {
       let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
       if (bullet) {
@@ -164,9 +174,15 @@ function update() {
     }
   }
 
-  bullets.children.iterate(b => b && b.y < 0 && b.destroy());
-  alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
+  // Destroy bullets that go out of bounds
+  bullets.children.iterate(b => {
+    if (b && b.active && b.y < 0) b.destroy();
+  });
+  alienBullets.children.iterate(b => {
+    if (b && b.active && b.y > 600) b.destroy();
+  });
 
+  // Level progression
   if (!bossActive && aliens.countActive() === 0 && levelInProgress) {
     levelInProgress = false;
     if (level < maxLevel) {
@@ -243,12 +259,19 @@ function spawnBoss() {
   boss = scene.physics.add.sprite(450, 100, 'boss').setScale(0.4);
   boss.setImmovable(true);
   boss.body.setAllowGravity(false);
-  boss.body.moves = false;
+  boss.body.moves = false;            // Prevent physics movement
+  boss.body.velocity.set(0, 0);
+  boss.body.setCollideWorldBounds(true);
+  boss.body.checkCollision.none = true; // No physical collisions, just overlap
 
-  // Prevent physics "disturbance" when hit
+  // Overlap bullets and boss (disable bullet on hit to prevent pushing boss)
   scene.physics.add.overlap(bullets, boss, (bullet, bossSprite) => {
     bullet.body.enable = false;
+    bullet.body.setVelocity(0, 0);
+    bullet.setActive(false);
+    bullet.setVisible(false);
     bullet.destroy();
+
     handleBossHit(bullet, bossSprite);
   });
 
