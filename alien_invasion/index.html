@@ -42,7 +42,7 @@ const config = {
 };
 
 let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
-let boss, bossHealthBar, bossHealthBarBg, bossHealthText;
+let bossgroup, bossHealthBar, bossHealthBarBg, bossHealthText;
 let score, lives, level;
 let scoreText, livesText, levelText;
 let alienMoveDirection, alienSpeed, alienShootTimer;
@@ -69,6 +69,8 @@ function create() {
   ship.setCollideWorldBounds(true);
   cursors = this.input.keyboard.createCursorKeys();
 
+  bossGroup = this.physics.add.group();
+  this.physics.add.overlap(bullets, bossGroup, handleBossHit);
   bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 10 });
   alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
   aliens = this.physics.add.group();
@@ -79,6 +81,7 @@ function create() {
   this.physics.add.overlap(alienBullets, ship, handleShipHit);
   this.physics.add.overlap(bullets, aliens, handleAlienHit);
   this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
+  this.physics.add.overlap(bullets, boss, handleBossHit);
 
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
@@ -253,7 +256,7 @@ function spawnBoss() {
   lastBossReinforce = 900;
 
   bullet.destroy();
-  boss = scene.physics.add.sprite(450, 100, 'boss').setScale(0.4);
+  boss = bossGroup.create(450, 100, 'boss').setScale(0.2);
   boss.setImmovable(true);
   boss.body.setAllowGravity(false);
   boss.body.setCollideWorldBounds(true);
@@ -272,10 +275,9 @@ function spawnBoss() {
 }
 
 function handleBossHit(bullet, bossSprite) {
-    // Destroy bullet only once here
-    bullet.destroy();
   if (!bossSprite.active) return;
 
+  bullet.destroy();
 
   bossHealth -= 10;
   updateBossHealthBar();
