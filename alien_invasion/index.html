@@ -131,10 +131,11 @@ function update() {
       if (boss.x >= 850 || boss.x <= 50) {
         alienMoveDirection *= -1;
       }
-      // Move health bar with boss
-      if (boss.healthBarBg && boss.healthBar) {
-        boss.healthBarBg.setPosition(boss.x, boss.y - 40);
-        boss.healthBar.setPosition(boss.x - 80, boss.y - 40);
+      // Update boss health bar & text position to stay above the boss
+      if (boss.healthBarBg && boss.healthBar && boss.healthText) {
+        boss.healthBarBg.setPosition(boss.x, boss.y - 50);
+        boss.healthBar.setPosition(boss.x - 80, boss.y - 50);
+        boss.healthText.setPosition(boss.x, boss.y - 50);
       }
     }
   } else {
@@ -241,9 +242,17 @@ function spawnBoss() {
   bossHealth = 900;
   lastBossReinforce = 90;
 
-  // Create floating health bar above boss
-  boss.healthBarBg = scene.add.rectangle(boss.x, boss.y - 40, 160, 20, 0xff0000);
-  boss.healthBar = scene.add.rectangle(boss.x - 80, boss.y - 40, 160, 20, 0x00ff00).setOrigin(0, 0.5);
+  // Create floating health bar above boss - independent graphics, no physics
+  boss.healthBarBg = scene.add.rectangle(0, 0, 160, 20, 0xff0000).setOrigin(0.5);
+  boss.healthBar = scene.add.rectangle(0, 0, 160, 20, 0x00ff00).setOrigin(0, 0.5);
+
+  // Health text on top of health bar
+  boss.healthText = scene.add.text(0, 0, bossHealth.toString(), { fontSize: '16px', fill: '#000', fontStyle: 'bold' }).setOrigin(0.5);
+
+  // Initial position update
+  boss.healthBarBg.setPosition(boss.x, boss.y - 50);
+  boss.healthBar.setPosition(boss.x - 80, boss.y - 50);
+  boss.healthText.setPosition(boss.x, boss.y - 50);
 }
 
 function handleBossHit(bullet, bossSprite) {
@@ -253,9 +262,10 @@ function handleBossHit(bullet, bossSprite) {
   updateBossHealthBar();
 
   if (bossHealth <= 0) {
+    bossSprite.destroy();
     if (bossSprite.healthBar) bossSprite.healthBar.destroy();
     if (bossSprite.healthBarBg) bossSprite.healthBarBg.destroy();
-    bossSprite.destroy();
+    if (bossSprite.healthText) bossSprite.healthText.destroy();
     endGame(true);
   } else if (bossHealth <= lastBossReinforce - 30) {
     createAliens();
@@ -266,8 +276,9 @@ function handleBossHit(bullet, bossSprite) {
 function updateBossHealthBar() {
   const percent = Phaser.Math.Clamp(bossHealth / 900, 0, 1);
   const boss = bossGroup.getFirstAlive();
-  if (boss && boss.healthBar) {
+  if (boss && boss.healthBar && boss.healthBarBg && boss.healthText) {
     boss.healthBar.width = 160 * percent;
+    boss.healthText.setText(`${bossHealth}`);
   }
 }
 
@@ -277,11 +288,6 @@ function endGame(won) {
   let color = won ? '#0f0' : '#f00';
   gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
   restartButton.style.display = 'block';
-
-  bossGroup.children.iterate(boss => {
-    if (boss.healthBar) boss.healthBar.destroy();
-    if (boss.healthBarBg) boss.healthBarBg.destroy();
-  });
 }
 
 new Phaser.Game(config);
