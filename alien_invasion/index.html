@@ -53,6 +53,7 @@
 
     let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
     let boss, bossHealthBar, bossHealthBarBg, bossHealthText;
+    let bossGroup;
     let score, lives, level;
     let scoreText, livesText, levelText;
     let alienMoveDirection, alienSpeed, alienShootTimer;
@@ -89,6 +90,13 @@
       this.physics.add.overlap(alienBullets, ship, handleShipHit);
       this.physics.add.overlap(bullets, aliens, handleAlienHit);
       this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
+
+      bossGroup = this.physics.add.group();
+  
+      // Add overlap for boss **once** here, not inside spawnBoss()
+      this.physics.add.overlap(bullets, bossGroup, (bullet, bossSprite) => {
+        handleBossHit(bullet, bossSprite);
+      });
 
       scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
       livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
@@ -262,15 +270,18 @@
       bossHealth = 900; // Reset boss health here
       lastBossReinforce = 900;
 
+      // Clear previous boss, if any
+      bossGroup.clear(true, true);
+
       boss = scene.physics.add.sprite(450, 100, 'boss').setScale(0.4);
       boss.setImmovable(true);
       boss.body.setAllowGravity(false);
       boss.body.setCollideWorldBounds(true);
 
-      scene.physics.add.overlap(bullets, boss, (bullet, bossSprite) => {
-        handleBossHit(bullet, bossSprite);
-      });
+      // Add boss to bossGroup
+      bossGroup.add(boss);
 
+      // Create health bars as before
       bossHealthBarBg = scene.add.rectangle(boss.x, boss.y - 50, 160, 20, 0xff0000).setOrigin(0.5);
       bossHealthBar = scene.add.rectangle(boss.x - 80, boss.y - 50, 160, 20, 0x00ff00).setOrigin(0, 0.5);
       bossHealthText = scene.add.text(boss.x, boss.y - 50, bossHealth.toString(), { fontSize: '16px', fill: '#000' }).setOrigin(0.5);
@@ -281,15 +292,14 @@
     }
 
     function handleBossHit(bullet, bossSprite) {
-      if (!bossSprite.active) return;
+      if (!bossSprite.active) return; // Defensive check
+      if (!bullet.active) return; // Defensive check
 
       bossHealth -= 10;
       updateBossHealthBar();
 
-      // Destroy bullet only once here
       bullet.destroy();
 
-      // Flash red briefly on hit
       bossSprite.setTint(0xff0000);
       scene.time.delayedCall(100, () => bossSprite.clearTint());
 
@@ -297,7 +307,9 @@
         bossHealthBar.destroy();
         bossHealthBarBg.destroy();
         bossHealthText.destroy();
-        bossSprite.destroy();
+
+        bossGroup.clear(true, true); // Destroy boss and clear from group
+
         endGame(true);
       } else if (bossHealth <= lastBossReinforce - 30) {
         spawnReinforcements();
