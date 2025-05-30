@@ -41,6 +41,7 @@ const config = {
   scene: { preload, create, update },
 };
 
+let bossHealthBarBg, bossHealthBar;
 let bossGroup;
 let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
 let score, lives, level;
@@ -86,6 +87,10 @@ function create() {
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
   levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
+
+  bossHealthBarBg = this.add.rectangle(300, 20, 300, 20, 0xff0000).setVisible(false);
+  bossHealthBar = this.add.rectangle(300, 20, 300, 20, 0x00ff00).setVisible(false);
+
 
   this.input.keyboard.on('keydown-SPACE', () => {
     let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
@@ -228,16 +233,23 @@ function collectPowerUp(ship, powerUp) {
 
 function spawnBoss() {
   bossActive = true;
-  boss = bossGroup.create(450, 100, 'boss').setScale(0.2); // ✅ Create in group
+  const boss = bossGroup.create(450, 100, 'boss').setScale(0.2);
+  scene.physics.add.overlap(bullets, boss, handleBossHit);
   levelText.setText('Boss Level!');
   dropPowerUp();
   scene.time.delayedCall(3000, () => dropPowerUp());
+  bossHealth = 900;
+  lastBossReinforce = 90;
+  bossHealthBarBg.setVisible(true);
+  bossHealthBar.setVisible(true);
+  updateBossHealthBar();
 }
 
 function handleBossHit(bullet, bossSprite) {
   bullet.destroy(); // Always destroy the bullet
 
   bossHealth -= 10;
+  updateBossHealthBar();
 
   if (bossHealth <= 0) {
     bossSprite.destroy();
@@ -247,6 +259,12 @@ function handleBossHit(bullet, bossSprite) {
     lastBossReinforce = bossHealth;
   }
 }
+
+function updateBossHealthBar() {
+  const percent = Phaser.Math.Clamp(bossHealth / 900, 0, 1);
+  bossHealthBar.width = 300 * percent;
+}
+
 
 function endGame(won) {
   scene.scene.pause();
