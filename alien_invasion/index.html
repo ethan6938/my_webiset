@@ -249,15 +249,16 @@ function collectPowerUp(ship, powerUp) {
 
 function spawnBoss() {
   bossActive = true;
+  bossHealth = 900; // Reset boss health here
+  lastBossReinforce = 900;
+
   boss = scene.physics.add.sprite(450, 100, 'boss').setScale(0.4);
   boss.setImmovable(true);
   boss.body.setAllowGravity(false);
-  // Removed boss.body.moves = false; to allow smooth manual movement
   boss.body.setCollideWorldBounds(true);
 
   scene.physics.add.overlap(bullets, boss, (bullet, bossSprite) => {
     handleBossHit(bullet, bossSprite);
-    bullet.destroy();
   });
 
   bossHealthBarBg = scene.add.rectangle(boss.x, boss.y - 50, 160, 20, 0xff0000).setOrigin(0.5);
@@ -274,6 +275,9 @@ function handleBossHit(bullet, bossSprite) {
 
   bossHealth -= 10;
   updateBossHealthBar();
+
+  // Destroy bullet only once here
+  bullet.destroy();
 
   // Flash red briefly on hit
   bossSprite.setTint(0xff0000);
