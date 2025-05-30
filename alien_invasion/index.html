@@ -260,6 +260,15 @@ function handleBossHit(bullet, bossSprite) {
   }
 }
 
+function spawnReinforcements() {
+  for (let x = 100; x <= 700; x += 80) {
+    for (let y = 250; y <= 350; y += 50) {
+      const reinforcement = aliens.create(x, y, 'alien').setScale(0.05);
+      reinforcement.setActive(true).setVisible(true); // Ensure they're active
+    }
+  }
+}
+
 function updateBossHealthBar() {
   const percent = Phaser.Math.Clamp(bossHealth / 900, 0, 1);
   bossHealthBar.width = 300 * percent;
