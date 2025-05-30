@@ -91,6 +91,7 @@ function create() {
       bullet.body.enable = true;
       bullet.setScale(0.2);
       bullet.body.velocity.y = -400;
+      bullet.body.setSize(bullet.width, bullet.height); // Fix bullet collision size
     }
   });
 
@@ -252,11 +253,11 @@ function spawnBoss() {
   boss.setImmovable(true);
   boss.body.setAllowGravity(false);
   boss.body.moves = false;
-  boss.body.velocity.set(0, 0);
   boss.body.setCollideWorldBounds(true);
-  boss.body.checkCollision.none = true;
 
-  // <-- FIXED overlap handler: call damage first, then destroy bullet
+  // Enable collision detection by NOT disabling it
+  // Removed: boss.body.checkCollision.none = true;
+
   scene.physics.add.overlap(bullets, boss, (bullet, bossSprite) => {
     handleBossHit(bullet, bossSprite);
     bullet.destroy();
