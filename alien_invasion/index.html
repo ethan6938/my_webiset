@@ -49,7 +49,8 @@ let shipInvulnerable, scene, gameOverText, restartButton;
 let levelInProgress = true;
 let bossHealth = 900;
 let bossActive = false;
-let lastBossReinforce = 90;
+let lastBossReinforce = 900;
+let boss, bossHealthBar, bossHealthBarBg, bossHealthText;
 
 function preload() {
   this.load.image('ship', 'images/ship.png');
@@ -114,6 +115,10 @@ function resetGameVariables() {
   bossActive = false;
   bossHealth = 900;
   lastBossReinforce = 900;
+  boss = null;
+  bossHealthBar = null;
+  bossHealthBarBg = null;
+  bossHealthText = null;
 }
 
 function update() {
@@ -124,17 +129,15 @@ function update() {
     cursors.right.isDown ? 300 : 0
   );
 
-  if (bossActive && bossGroup.countActive() > 0) {
-    const boss = bossGroup.getFirstAlive();
-    if (boss) {
-      boss.x += alienMoveDirection * 2;
-      if (boss.x >= 850 || boss.x <= 50) {
-        alienMoveDirection *= -1;
-      }
-      boss.healthBarBg.setPosition(boss.x, boss.y - 50);
-      boss.healthBar.setPosition(boss.x - 80, boss.y - 50);
-      boss.healthText.setPosition(boss.x, boss.y - 50);
+  if (bossActive && boss && boss.active) {
+    boss.x += alienMoveDirection * 2;
+    if (boss.x >= 850 || boss.x <= 50) {
+      alienMoveDirection *= -1;
     }
+
+    bossHealthBarBg.setPosition(boss.x, boss.y - 50);
+    bossHealthBar.setPosition(boss.x - 80, boss.y - 50);
+    bossHealthText.setPosition(boss.x, boss.y - 50);
   } else {
     let moveX = alienSpeed * alienMoveDirection * (1 / 60);
     aliens.children.iterate(alien => alien.x += moveX);
@@ -150,7 +153,7 @@ function update() {
   alienShootTimer += scene.game.loop.delta;
   if (alienShootTimer > (2000 - level * 200)) {
     alienShootTimer = 0;
-    let shooter = bossActive ? bossGroup.getFirstAlive() : Phaser.Utils.Array.GetRandom(aliens.getChildren());
+    let shooter = bossActive ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
     if (shooter) {
       let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
       if (bullet) {
@@ -230,32 +233,32 @@ function collectPowerUp(ship, powerUp) {
 
 function spawnBoss() {
   bossActive = true;
-  const boss = bossGroup.create(450, 100, 'boss').setScale(0.4);
+  boss = scene.physics.add.sprite(450, 100, 'boss').setScale(0.4);
+  bossGroup.add(boss);
   boss.setImmovable(true);
   boss.body.setAllowGravity(false);
-
   scene.physics.add.overlap(bullets, boss, handleBossHit);
 
-  boss.healthBarBg = scene.add.rectangle(boss.x, boss.y - 50, 160, 20, 0xff0000).setOrigin(0.5);
-  boss.healthBar = scene.add.rectangle(boss.x - 80, boss.y - 50, 160, 20, 0x00ff00).setOrigin(0, 0.5);
-  boss.healthText = scene.add.text(boss.x, boss.y - 50, bossHealth.toString(), { fontSize: '16px', fill: '#000' }).setOrigin(0.5);
+  bossHealthBarBg = scene.add.rectangle(boss.x, boss.y - 50, 160, 20, 0xff0000).setOrigin(0.5);
+  bossHealthBar = scene.add.rectangle(boss.x - 80, boss.y - 50, 160, 20, 0x00ff00).setOrigin(0, 0.5);
+  bossHealthText = scene.add.text(boss.x, boss.y - 50, bossHealth.toString(), { fontSize: '16px', fill: '#000' }).setOrigin(0.5);
 
   levelText.setText('Boss Level!');
   dropPowerUp();
   scene.time.delayedCall(3000, () => dropPowerUp());
 }
 
-function handleBossHit(bullet, boss) {
-  if (!boss.active) return;
+function handleBossHit(bullet, bossSprite) {
+  if (!bossSprite.active) return;
   bullet.destroy();
   bossHealth -= 10;
   updateBossHealthBar();
 
   if (bossHealth <= 0) {
-    boss.healthBar.destroy();
-    boss.healthBarBg.destroy();
-    boss.healthText.destroy();
-    boss.destroy();
+    bossHealthBar.destroy();
+    bossHealthBarBg.destroy();
+    bossHealthText.destroy();
+    bossSprite.destroy();
     endGame(true);
   } else if (bossHealth <= lastBossReinforce - 30) {
     createAliens();
@@ -264,11 +267,9 @@ function handleBossHit(bullet, boss) {
 }
 
 function updateBossHealthBar() {
-  const boss = bossGroup.getFirstAlive();
-  if (!boss) return;
   const percent = Phaser.Math.Clamp(bossHealth / 900, 0, 1);
-  boss.healthBar.width = 160 * percent;
-  boss.healthText.setText(`${bossHealth}`);
+  bossHealthBar.width = 160 * percent;
+  bossHealthText.setText(`${bossHealth}`);
 }
 
 function endGame(won) {
