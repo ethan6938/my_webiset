@@ -76,6 +76,7 @@ function create() {
   powerUpGroup = this.physics.add.group();
 
   createAliens();
+  spawnReinforcements();
 
   this.physics.add.overlap(alienBullets, ship, handleShipHit);
   this.physics.add.overlap(bullets, aliens, handleAlienHit);
