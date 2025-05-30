@@ -255,7 +255,7 @@ function spawnBoss() {
   bossHealth = 900; // Reset boss health here
   lastBossReinforce = 900;
 
-  bullet.destroy();
+  bullets.clear(true, true); 
   boss = bossGroup.create(450, 100, 'boss').setScale(0.2);
   boss.setImmovable(true);
   boss.body.setAllowGravity(false);
