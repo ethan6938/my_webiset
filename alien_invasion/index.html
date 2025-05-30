@@ -41,6 +41,7 @@ const config = {
   scene: { preload, create, update },
 };
 
+let bossHealthBarBg, bossHealthBar;
 let bossGroup;
 let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
 let score, lives, level;
@@ -79,6 +80,9 @@ function create() {
   this.physics.add.overlap(alienBullets, ship, handleShipHit);
   this.physics.add.overlap(bullets, aliens, handleAlienHit);
   this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
+
+  bossHealthBarBg = scene.add.rectangle(300, 20, 300, 20, 0xff0000).setVisible(false);
+  bossHealthBar = scene.add.rectangle(300, 20, 300, 20, 0x00ff00).setVisible(false);
 
   bossGroup = this.physics.add.group();
   this.physics.add.overlap(bullets, bossGroup, handleBossHit);
@@ -232,12 +236,20 @@ function spawnBoss() {
   levelText.setText('Boss Level!');
   dropPowerUp();
   scene.time.delayedCall(3000, () => dropPowerUp());
+
+  // Show health bar
+  bossHealthBarBg.setVisible(true);
+  bossHealthBar.setVisible(true);
+  bossHealth = 900;
+  lastBossReinforce = 90;
+  updateBossHealthBar();
 }
 
 function handleBossHit(bullet, bossSprite) {
   bullet.destroy(); // Always destroy the bullet
 
   bossHealth -= 10;
+  updateBossHealthBar();
 
   if (bossHealth <= 0) {
     bossSprite.destroy();
@@ -248,12 +260,21 @@ function handleBossHit(bullet, bossSprite) {
   }
 }
 
+function updateBossHealthBar() {
+  const percent = Phaser.Math.Clamp(bossHealth / 900, 0, 1);
+  bossHealthBar.width = 300 * percent;
+}
+
 function endGame(won) {
   scene.scene.pause();
   let message = won ? 'You Win! 🎉' : 'Game Over!';
   let color = won ? '#0f0' : '#f00';
   gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
   restartButton.style.display = 'block';
+
+  // Hide boss health bar
+  bossHealthBar.setVisible(false);
+  bossHealthBarBg.setVisible(false);
 }
 
 new Phaser.Game(config);
