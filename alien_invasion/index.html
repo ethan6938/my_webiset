@@ -41,9 +41,7 @@ const config = {
   scene: { preload, create, update },
 };
 
-let bossHealthBarBg, bossHealthBar;
-let bossGroup;
-let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
+let ship, cursors, bullets, aliens, alienBullets, powerUpGroup, bossGroup;
 let score, lives, level;
 let scoreText, livesText, levelText;
 let alienMoveDirection, alienSpeed, alienShootTimer;
@@ -74,6 +72,7 @@ function create() {
   alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
   aliens = this.physics.add.group();
   powerUpGroup = this.physics.add.group();
+  bossGroup = this.physics.add.group();
 
   createAliens();
 
@@ -81,16 +80,9 @@ function create() {
   this.physics.add.overlap(bullets, aliens, handleAlienHit);
   this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
 
-  bossGroup = this.physics.add.group();
-  this.physics.add.overlap(bullets, bossGroup, handleBossHit);
-
   scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
   livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
   levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
-
-  bossHealthBarBg = this.add.rectangle(300, 20, 300, 20, 0xff0000).setVisible(false);
-  bossHealthBar = this.add.rectangle(300, 20, 300, 20, 0x00ff00).setVisible(false);
-
 
   this.input.keyboard.on('keydown-SPACE', () => {
     let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
@@ -132,10 +124,18 @@ function update() {
     cursors.right.isDown ? 300 : 0
   );
 
-  if (bossActive && boss) {
-    boss.x += alienMoveDirection * 2;
-    if (boss.x >= 850 || boss.x <= 50) {
-      alienMoveDirection *= -1;
+  if (bossActive && bossGroup.countActive() > 0) {
+    const boss = bossGroup.getFirstAlive();
+    if (boss) {
+      boss.x += alienMoveDirection * 2;
+      if (boss.x >= 850 || boss.x <= 50) {
+        alienMoveDirection *= -1;
+      }
+      // Move health bar with boss
+      if (boss.healthBarBg && boss.healthBar) {
+        boss.healthBarBg.setPosition(boss.x, boss.y - 40);
+        boss.healthBar.setPosition(boss.x - 80, boss.y - 40);
+      }
     }
   } else {
     let moveX = alienSpeed * alienMoveDirection * (1 / 60);
@@ -152,7 +152,7 @@ function update() {
   alienShootTimer += scene.game.loop.delta;
   if (alienShootTimer > (2000 - level * 200)) {
     alienShootTimer = 0;
-    let shooter = bossActive ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
+    let shooter = bossActive ? bossGroup.getFirstAlive() : Phaser.Utils.Array.GetRandom(aliens.getChildren());
     if (shooter) {
       let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
       if (bullet) {
@@ -240,31 +240,36 @@ function spawnBoss() {
   scene.time.delayedCall(3000, () => dropPowerUp());
   bossHealth = 900;
   lastBossReinforce = 90;
-  bossHealthBarBg.setVisible(true);
-  bossHealthBar.setVisible(true);
-  updateBossHealthBar();
+
+  // Create floating health bar above boss
+  boss.healthBarBg = scene.add.rectangle(boss.x, boss.y - 40, 160, 20, 0xff0000);
+  boss.healthBar = scene.add.rectangle(boss.x - 80, boss.y - 40, 160, 20, 0x00ff00).setOrigin(0, 0.5);
 }
 
 function handleBossHit(bullet, bossSprite) {
-  bullet.destroy(); // Always destroy the bullet
-
+  if (!bossSprite.active) return;
+  bullet.destroy();
   bossHealth -= 10;
   updateBossHealthBar();
 
   if (bossHealth <= 0) {
+    if (bossSprite.healthBar) bossSprite.healthBar.destroy();
+    if (bossSprite.healthBarBg) bossSprite.healthBarBg.destroy();
     bossSprite.destroy();
     endGame(true);
   } else if (bossHealth <= lastBossReinforce - 30) {
-    createAliens(); // Reinforcements every 30 health lost
+    createAliens();
     lastBossReinforce = bossHealth;
   }
 }
 
 function updateBossHealthBar() {
   const percent = Phaser.Math.Clamp(bossHealth / 900, 0, 1);
-  bossHealthBar.width = 300 * percent;
+  const boss = bossGroup.getFirstAlive();
+  if (boss && boss.healthBar) {
+    boss.healthBar.width = 160 * percent;
+  }
 }
-
 
 function endGame(won) {
   scene.scene.pause();
@@ -272,6 +277,11 @@ function endGame(won) {
   let color = won ? '#0f0' : '#f00';
   gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
   restartButton.style.display = 'block';
+
+  bossGroup.children.iterate(boss => {
+    if (boss.healthBar) boss.healthBar.destroy();
+    if (boss.healthBarBg) boss.healthBarBg.destroy();
+  });
 }
 
 new Phaser.Game(config);
