@@ -27,96 +27,100 @@
 <button id="restartBtn">Restart Game</button>
 
 <script>
-  const maxLevel = 5;
+const maxLevel = 5;
 
-  const config = {
-    type: Phaser.AUTO,
-    width: 900,
-    height: 600,
-    backgroundColor: '#000000',
-    physics: {
-      default: 'arcade',
-      arcade: { debug: false },
-    },
-    scene: { preload, create, update },
-  };
+const config = {
+  type: Phaser.AUTO,
+  width: 900,
+  height: 600,
+  backgroundColor: '#000000',
+  physics: {
+    default: 'arcade',
+    arcade: { debug: false },
+  },
+  scene: { preload, create, update },
+};
 
-  let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
-  let score, lives, level;
-  let scoreText, livesText, levelText;
-  let alienMoveDirection, alienSpeed, alienShootTimer;
-  let shipInvulnerable, scene, gameOverText;
-  let restartButton;
-  let levelInProgress = true;
+let ship, cursors, bullets, aliens, alienBullets, powerUpGroup, boss, bossHealth = 0;
+let score, lives, level;
+let scoreText, livesText, levelText, bossHealthText;
+let alienMoveDirection, alienSpeed, alienShootTimer;
+let shipInvulnerable, scene, gameOverText;
+let restartButton;
+let levelInProgress = true;
+let isBossLevel = false;
 
-  function preload() {
-    this.load.image('ship', 'images/ship.png');
-    this.load.image('alien', 'images/alien.png');
-    this.load.image('bullet', 'images/bullet.png');
-    this.load.image('alienBullet', 'images/alienbullet.png');
-    this.load.image('heart', 'images/heart.png'); // Power-up image
-  }
+function preload() {
+  this.load.image('ship', 'images/ship.png');
+  this.load.image('alien', 'images/alien.png');
+  this.load.image('bullet', 'images/bullet.png');
+  this.load.image('alienBullet', 'images/alienbullet.png');
+  this.load.image('heart', 'images/heart.png');
+  this.load.image('boss', 'images/alien.png'); // reuse alien graphic for boss
+}
 
-  function create() {
-    scene = this;
-    resetGameVariables();
+function create() {
+  scene = this;
+  resetGameVariables();
 
-    ship = this.physics.add.sprite(250, 500, 'ship').setScale(0.2);
-    ship.setCollideWorldBounds(true);
-    cursors = this.input.keyboard.createCursorKeys();
+  ship = this.physics.add.sprite(450, 500, 'ship').setScale(0.2);
+  ship.setCollideWorldBounds(true);
+  cursors = this.input.keyboard.createCursorKeys();
 
-    bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 10 });
-    alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
-    aliens = this.physics.add.group();
-    powerUpGroup = this.physics.add.group();
+  bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 10 });
+  alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
+  aliens = this.physics.add.group();
+  powerUpGroup = this.physics.add.group();
 
-    createAliens();
+  createAliens();
 
-    this.physics.add.overlap(alienBullets, ship, handleShipHit);
-    this.physics.add.overlap(bullets, aliens, handleAlienHit);
-    this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
+  this.physics.add.overlap(alienBullets, ship, handleShipHit);
+  this.physics.add.overlap(bullets, aliens, handleAlienHit);
+  this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
+  this.physics.add.overlap(bullets, boss, handleBossHit);
 
-    scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
-    livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
-    levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
+  scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
+  livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
+  levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
+  bossHealthText = this.add.text(700, 10, '', { fontSize: '20px', fill: '#f00' });
 
-    this.input.keyboard.on('keydown-SPACE', () => {
-      let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
-      if (bullet) {
-        bullet.setActive(true).setVisible(true);
-        bullet.body.enable = true;
-        bullet.setScale(0.2);
-        bullet.body.velocity.y = -400;
-      }
-    });
+  this.input.keyboard.on('keydown-SPACE', () => {
+    let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
+    if (bullet) {
+      bullet.setActive(true).setVisible(true);
+      bullet.body.enable = true;
+      bullet.setScale(0.2);
+      bullet.body.velocity.y = -400;
+    }
+  });
 
-    restartButton = document.getElementById('restartBtn');
-    restartButton.style.display = 'none';
-    restartButton.onclick = () => {
-      scene.scene.restart();
-    };
-  }
+  restartButton = document.getElementById('restartBtn');
+  restartButton.style.display = 'none';
+  restartButton.onclick = () => scene.scene.restart();
+}
 
-  function resetGameVariables() {
-    score = 0;
-    lives = 3;
-    level = 1;
-    alienMoveDirection = 1;
-    alienSpeed = 20;
-    alienShootTimer = 0;
-    shipInvulnerable = false;
-    gameOverText = null;
-    levelInProgress = true;
-  }
+function resetGameVariables() {
+  score = 0;
+  lives = 3;
+  level = 1;
+  alienMoveDirection = 1;
+  alienSpeed = 20;
+  alienShootTimer = 0;
+  shipInvulnerable = false;
+  gameOverText = null;
+  levelInProgress = true;
+  isBossLevel = false;
+}
 
-  function update() {
-    if (!ship || !ship.body || gameOverText) return;
+function update() {
+  if (!ship || !ship.body || gameOverText) return;
 
-    ship.setVelocityX(
-      cursors.left.isDown ? -300 :
-      cursors.right.isDown ? 300 : 0
-    );
+  ship.setVelocityX(
+    cursors.left.isDown ? -300 :
+    cursors.right.isDown ? 300 : 0
+  );
 
+  if (!isBossLevel) {
     let moveX = alienSpeed * alienMoveDirection * (1 / 60);
     aliens.children.iterate(alien => alien.x += moveX);
 
@@ -126,105 +130,126 @@
       alienMoveDirection *= -1;
       aliens.children.iterate(a => a.y += 10);
     }
+  }
 
-    alienShootTimer += scene.game.loop.delta;
-    if (alienShootTimer > (2000 - level * 300)) {
-      alienShootTimer = 0;
+  alienShootTimer += scene.game.loop.delta;
+  if (alienShootTimer > (2000 - level * 200)) {
+    alienShootTimer = 0;
+    if (isBossLevel && boss && boss.active) {
+      shootFrom(boss);
+    } else {
       let shooter = Phaser.Utils.Array.GetRandom(aliens.getChildren());
-      if (shooter) {
-        let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
-        if (bullet) {
-          bullet.setActive(true).setVisible(true);
-          bullet.body.enable = true;
-          bullet.setScale(0.1);
-          bullet.body.velocity.y = 300 + (level * 40);
-        }
-      }
-    }
-
-    bullets.children.iterate(b => b && b.y < 0 && b.destroy());
-    alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
-
-    if (aliens.countActive() === 0 && levelInProgress) {
-      levelInProgress = false;
-      if (level < maxLevel) {
-        level++;
-        levelText.setText('Level: ' + level);
-        alienSpeed += 15;
-
-        // Only drop power-up every 2nd level
-        if (level % 2 === 0) {
-          scene.time.delayedCall(500, dropPowerUp);
-        }
-
-        scene.time.delayedCall(1000, () => {
-          createAliens();
-          levelInProgress = true;
-        });
-      } else {
-        scene.time.delayedCall(500, () => endGame(true));
-      }
+      if (shooter) shootFrom(shooter);
     }
   }
 
-  function createAliens() {
-    aliens.clear(true, true);
-    let rows = 3 + Math.floor(level / 2);
-    let cols = 7 + level;
+  bullets.children.iterate(b => b && b.y < 0 && b.destroy());
+  alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
 
-    for (let x = 100; x <= 100 + (cols * 60); x += 60) {
-      for (let y = 50; y < 50 + (rows * 50); y += 50) {
-        aliens.create(x, y, 'alien').setScale(0.05);
-      }
+  if (!isBossLevel && aliens.countActive() === 0 && levelInProgress) {
+    levelInProgress = false;
+    level++;
+    if (level <= maxLevel) {
+      alienSpeed += 10;
+      levelText.setText('Level: ' + level);
+      if (level % 2 === 0) dropPowerUp();
+      scene.time.delayedCall(1000, () => {
+        createAliens();
+        levelInProgress = true;
+      });
+    } else {
+      startBossFight();
     }
   }
 
-  function handleShipHit(bullet, hitship) {
-    if (shipInvulnerable) return;
+  if (isBossLevel && boss && boss.active && bossHealth <= 0) {
+    boss.destroy();
+    endGame(true);
+  }
+}
 
-    lives--;
-    livesText.setText('Lives: ' + lives);
-    shipInvulnerable = true;
-    hitship.setTint(0xff0000);
+function shootFrom(shooter) {
+  let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
+  if (bullet) {
+    bullet.setActive(true).setVisible(true);
+    bullet.body.enable = true;
+    bullet.setScale(0.1);
+    bullet.body.velocity.y = 300 + (level * 20);
+  }
+}
 
-    scene.time.delayedCall(1000, () => {
-      shipInvulnerable = false;
-      hitship.clearTint();
-    });
-
-    if (lives <= 0) {
-      bullet.destroy();
-      endGame(false);
+function createAliens() {
+  aliens.clear(true, true);
+  for (let x = 100; x <= 700; x += 80) {
+    for (let y = 50; y <= 150; y += 50) {
+      aliens.create(x, y, 'alien').setScale(0.05);
     }
   }
+}
 
-  function handleAlienHit(bullet, alien) {
+function handleShipHit(bullet, hitship) {
+  if (shipInvulnerable) return;
+
+  lives--;
+  livesText.setText('Lives: ' + lives);
+  shipInvulnerable = true;
+  hitship.setTint(0xff0000);
+  scene.time.delayedCall(1000, () => {
+    shipInvulnerable = false;
+    hitship.clearTint();
+  });
+
+  if (lives <= 0) {
     bullet.destroy();
-    alien.destroy();
-    score += 10;
-    scoreText.setText('Score: ' + score);
+    endGame(false);
   }
+}
 
-  function dropPowerUp() {
-    let powerUp = powerUpGroup.create(Phaser.Math.Between(100, 800), 0, 'heart').setScale(0.05);
-    powerUp.setVelocityY(100);
-  }
+function handleAlienHit(bullet, alien) {
+  bullet.destroy();
+  alien.destroy();
+  score += 10;
+  scoreText.setText('Score: ' + score);
+}
 
-  function collectPowerUp(ship, powerUp) {
-    powerUp.destroy();
-    lives += 1;
-    livesText.setText('Lives: ' + lives);
-  }
+function handleBossHit(bullet, boss) {
+  bullet.destroy();
+  bossHealth -= 10;
+  bossHealthText.setText('Boss HP: ' + bossHealth);
+}
 
-  function endGame(won) {
-    scene.scene.pause();
-    let message = won ? 'You Win! 🎉' : 'Game Over!';
-    let color = won ? '#0f0' : '#f00';
-    gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
-    restartButton.style.display = 'block';
-  }
+function collectPowerUp(ship, powerUp) {
+  powerUp.destroy();
+  lives++;
+  livesText.setText('Lives: ' + lives);
+}
 
-  new Phaser.Game(config);
+function dropPowerUp() {
+  let powerUp = powerUpGroup.create(Phaser.Math.Between(100, 800), 0, 'heart').setScale(0.05);
+  powerUp.setVelocityY(100);
+}
+
+function startBossFight() {
+  isBossLevel = true;
+  levelText.setText('BOSS LEVEL');
+  dropPowerUp();
+  scene.time.delayedCall(500, dropPowerUp);
+
+  boss = scene.physics.add.sprite(450, 150, 'boss').setScale(0.15);
+  bossHealth = 200;
+  bossHealthText.setText('Boss HP: ' + bossHealth);
+  scene.physics.add.overlap(bullets, boss, handleBossHit);
+}
+
+function endGame(won) {
+  scene.scene.pause();
+  let message = won ? 'You Win! 🎉' : 'Game Over!';
+  let color = won ? '#0f0' : '#f00';
+  gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
+  restartButton.style.display = 'block';
+}
+
+new Phaser.Game(config);
 </script>
 
 </body>
