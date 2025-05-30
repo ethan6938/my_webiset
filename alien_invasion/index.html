@@ -245,7 +245,12 @@ function spawnBoss() {
   boss.body.setAllowGravity(false);
   boss.body.moves = false;
 
-  scene.physics.add.overlap(bullets, boss, handleBossHit);
+  // Prevent physics "disturbance" when hit
+  scene.physics.add.overlap(bullets, boss, (bullet, bossSprite) => {
+    bullet.body.enable = false;
+    bullet.destroy();
+    handleBossHit(bullet, bossSprite);
+  });
 
   bossHealthBarBg = scene.add.rectangle(boss.x, boss.y - 50, 160, 20, 0xff0000).setOrigin(0.5);
   bossHealthBar = scene.add.rectangle(boss.x - 80, boss.y - 50, 160, 20, 0x00ff00).setOrigin(0, 0.5);
@@ -258,7 +263,7 @@ function spawnBoss() {
 
 function handleBossHit(bullet, bossSprite) {
   if (!bossSprite.active) return;
-  bullet.destroy();
+
   bossHealth -= 10;
   updateBossHealthBar();
 
