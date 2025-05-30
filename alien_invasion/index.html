@@ -1,3 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Alien Invasion</title>
+  <!-- ✅ Working Phaser version -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+  <style>
+    body { margin: 0; background-color: black; }
+    canvas { display: block; margin: 0 auto; }
+    #restartBtn {
+      position: absolute;
+      top: 80px;
+      left: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #222;
+      color: white;
+      border: 2px solid white;
+      cursor: pointer;
+      display: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<button id="restartBtn">Restart Game</button>
+
 <script>
   const maxLevel = 5;
 
@@ -13,20 +42,19 @@
     scene: { preload, create, update },
   };
 
-  let ship, cursors, bullets, aliens, alienBullets, lifePowerups;
+  let ship, cursors, bullets, aliens, alienBullets;
   let score, lives, level;
   let scoreText, livesText, levelText;
   let alienMoveDirection, alienSpeed, alienShootTimer;
   let shipInvulnerable, scene, gameOverText;
-  let restartButton;
-  let levelInProgress = true;
+  let restartButton, levelInProgress, powerUp;
 
   function preload() {
     this.load.image('ship', 'images/ship.png');
     this.load.image('alien', 'images/alien.png');
     this.load.image('bullet', 'images/bullet.png');
     this.load.image('alienBullet', 'images/alienbullet.png');
-    this.load.image('lifePowerup', 'images/heart.png'); // 💡 Add this image
+    this.load.image('heart', 'images/heart.png'); // Power-up image
   }
 
   function create() {
@@ -40,13 +68,11 @@
     bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 10 });
     alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
     aliens = this.physics.add.group();
-    lifePowerups = this.physics.add.group(); // ✅ power-up group
-
     createAliens();
 
     this.physics.add.overlap(alienBullets, ship, handleShipHit);
     this.physics.add.overlap(bullets, aliens, handleAlienHit);
-    this.physics.add.overlap(ship, lifePowerups, collectLifePowerup); // ✅ collision with ship
+    this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
 
     scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
     livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
@@ -67,6 +93,8 @@
     restartButton.onclick = () => {
       scene.scene.restart();
     };
+
+    powerUpGroup = this.physics.add.group();
   }
 
   function resetGameVariables() {
@@ -116,27 +144,21 @@
 
     bullets.children.iterate(b => b && b.y < 0 && b.destroy());
     alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
-    lifePowerups.children.iterate(p => p && p.y > 600 && p.destroy());
 
     if (aliens.countActive() === 0 && levelInProgress) {
       levelInProgress = false;
-
-      // ✅ Drop power-up (not on final level)
       if (level < maxLevel) {
-        spawnLifePowerup();
-      }
-
-      scene.time.delayedCall(1500, () => {
-        if (level < maxLevel) {
-          level++;
-          levelText.setText('Level: ' + level);
-          alienSpeed += 10;
+        level++;
+        levelText.setText('Level: ' + level);
+        alienSpeed += 10;
+        scene.time.delayedCall(1000, () => {
           createAliens();
+          dropLifePowerUp();
           levelInProgress = true;
-        } else {
-          endGame(true);
-        }
-      });
+        });
+      } else {
+        scene.time.delayedCall(500, () => endGame(true));
+      }
     }
   }
 
@@ -151,7 +173,6 @@
 
   function handleShipHit(bullet, hitship) {
     if (shipInvulnerable) return;
-
     lives--;
     livesText.setText('Lives: ' + lives);
     shipInvulnerable = true;
@@ -175,16 +196,14 @@
     scoreText.setText('Score: ' + score);
   }
 
-  // ✅ Spawn a power-up heart
-  function spawnLifePowerup() {
-    const x = Phaser.Math.Between(100, 800);
-    const powerup = lifePowerups.create(x, 0, 'lifePowerup').setScale(0.1);
-    powerup.body.velocity.y = 100;
+  function dropLifePowerUp() {
+    let powerUp = powerUpGroup.create(Phaser.Math.Between(100, 800), 0, 'heart');
+    powerUp.setVelocityY(150);
+    powerUp.setScale(0.05);
   }
 
-  // ✅ When collected
-  function collectLifePowerup(ship, powerup) {
-    powerup.destroy();
+  function collectPowerUp(ship, powerUp) {
+    powerUp.destroy();
     lives++;
     livesText.setText('Lives: ' + lives);
   }
@@ -199,3 +218,6 @@
 
   new Phaser.Game(config);
 </script>
+
+</body>
+</html>
