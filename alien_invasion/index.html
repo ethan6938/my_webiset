@@ -54,7 +54,7 @@
     this.load.image('alien', 'images/alien.png');
     this.load.image('bullet', 'images/bullet.png');
     this.load.image('alienBullet', 'images/alienbullet.png');
-    this.load.image('heart', 'images/heart.png'); // power-up image
+    this.load.image('heart', 'images/heart.png'); // Power-up image
   }
 
   function create() {
@@ -68,7 +68,8 @@
     bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 10 });
     alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
     aliens = this.physics.add.group();
-    powerUpGroup = this.physics.add.group(); // ✅ define power-ups group
+    powerUpGroup = this.physics.add.group();
+
     createAliens();
 
     this.physics.add.overlap(alienBullets, ship, handleShipHit);
@@ -127,7 +128,7 @@
     }
 
     alienShootTimer += scene.game.loop.delta;
-    if (alienShootTimer > (2000 - level * 200)) {
+    if (alienShootTimer > (2000 - level * 300)) {
       alienShootTimer = 0;
       let shooter = Phaser.Utils.Array.GetRandom(aliens.getChildren());
       if (shooter) {
@@ -136,7 +137,7 @@
           bullet.setActive(true).setVisible(true);
           bullet.body.enable = true;
           bullet.setScale(0.1);
-          bullet.body.velocity.y = 300 + (level * 20);
+          bullet.body.velocity.y = 300 + (level * 40);
         }
       }
     }
@@ -149,10 +150,12 @@
       if (level < maxLevel) {
         level++;
         levelText.setText('Level: ' + level);
-        alienSpeed += 10;
+        alienSpeed += 15;
 
-        // Drop a life power-up
-        dropPowerUp();
+        // Only drop power-up every 2nd level
+        if (level % 2 === 0) {
+          scene.time.delayedCall(500, dropPowerUp);
+        }
 
         scene.time.delayedCall(1000, () => {
           createAliens();
@@ -166,8 +169,11 @@
 
   function createAliens() {
     aliens.clear(true, true);
-    for (let x = 100; x <= 700; x += 80) {
-      for (let y = 50; y <= 150; y += 50) {
+    let rows = 3 + Math.floor(level / 2);
+    let cols = 7 + level;
+
+    for (let x = 100; x <= 100 + (cols * 60); x += 60) {
+      for (let y = 50; y < 50 + (rows * 50); y += 50) {
         aliens.create(x, y, 'alien').setScale(0.05);
       }
     }
