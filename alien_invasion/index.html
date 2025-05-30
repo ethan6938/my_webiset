@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Alien Invasion</title>
-  <!-- ✅ Working Phaser version -->
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
   <style>
     body { margin: 0; background-color: black; }
     canvas { display: block; margin: 0 auto; }
@@ -42,19 +41,20 @@
     scene: { preload, create, update },
   };
 
-  let ship, cursors, bullets, aliens, alienBullets;
+  let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
   let score, lives, level;
   let scoreText, livesText, levelText;
   let alienMoveDirection, alienSpeed, alienShootTimer;
   let shipInvulnerable, scene, gameOverText;
-  let restartButton, levelInProgress, powerUp;
+  let restartButton;
+  let levelInProgress = true;
 
   function preload() {
     this.load.image('ship', 'images/ship.png');
     this.load.image('alien', 'images/alien.png');
     this.load.image('bullet', 'images/bullet.png');
     this.load.image('alienBullet', 'images/alienbullet.png');
-    this.load.image('heart', 'images/heart.png'); // Power-up image
+    this.load.image('heart', 'images/heart.png'); // power-up image
   }
 
   function create() {
@@ -68,6 +68,7 @@
     bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 10 });
     alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
     aliens = this.physics.add.group();
+    powerUpGroup = this.physics.add.group(); // ✅ define power-ups group
     createAliens();
 
     this.physics.add.overlap(alienBullets, ship, handleShipHit);
@@ -93,8 +94,6 @@
     restartButton.onclick = () => {
       scene.scene.restart();
     };
-
-    powerUpGroup = this.physics.add.group();
   }
 
   function resetGameVariables() {
@@ -151,9 +150,12 @@
         level++;
         levelText.setText('Level: ' + level);
         alienSpeed += 10;
+
+        // Drop a life power-up
+        dropPowerUp();
+
         scene.time.delayedCall(1000, () => {
           createAliens();
-          dropLifePowerUp();
           levelInProgress = true;
         });
       } else {
@@ -173,6 +175,7 @@
 
   function handleShipHit(bullet, hitship) {
     if (shipInvulnerable) return;
+
     lives--;
     livesText.setText('Lives: ' + lives);
     shipInvulnerable = true;
@@ -196,15 +199,14 @@
     scoreText.setText('Score: ' + score);
   }
 
-  function dropLifePowerUp() {
-    let powerUp = powerUpGroup.create(Phaser.Math.Between(100, 800), 0, 'heart');
-    powerUp.setVelocityY(150);
-    powerUp.setScale(0.05);
+  function dropPowerUp() {
+    let powerUp = powerUpGroup.create(Phaser.Math.Between(100, 800), 0, 'heart').setScale(0.05);
+    powerUp.setVelocityY(100);
   }
 
   function collectPowerUp(ship, powerUp) {
     powerUp.destroy();
-    lives++;
+    lives += 1;
     livesText.setText('Lives: ' + lives);
   }
 
