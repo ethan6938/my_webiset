@@ -91,7 +91,7 @@ function create() {
       bullet.body.enable = true;
       bullet.setScale(0.2);
       bullet.body.velocity.y = -400;
-      bullet.body.setSize(bullet.width, bullet.height); // Fix bullet collision size
+      bullet.body.setSize(bullet.width, bullet.height);
     }
   });
 
@@ -252,11 +252,8 @@ function spawnBoss() {
   boss = scene.physics.add.sprite(450, 100, 'boss').setScale(0.4);
   boss.setImmovable(true);
   boss.body.setAllowGravity(false);
-  boss.body.moves = false;
+  // Removed boss.body.moves = false; to allow smooth manual movement
   boss.body.setCollideWorldBounds(true);
-
-  // Enable collision detection by NOT disabling it
-  // Removed: boss.body.checkCollision.none = true;
 
   scene.physics.add.overlap(bullets, boss, (bullet, bossSprite) => {
     handleBossHit(bullet, bossSprite);
@@ -277,6 +274,10 @@ function handleBossHit(bullet, bossSprite) {
 
   bossHealth -= 10;
   updateBossHealthBar();
+
+  // Flash red briefly on hit
+  bossSprite.setTint(0xff0000);
+  scene.time.delayedCall(100, () => bossSprite.clearTint());
 
   if (bossHealth <= 0) {
     bossHealthBar.destroy();
