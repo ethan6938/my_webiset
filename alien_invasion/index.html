@@ -252,6 +252,7 @@ function spawnBoss() {
   bossHealth = 900; // Reset boss health here
   lastBossReinforce = 900;
 
+  bullet.destroy();
   boss = scene.physics.add.sprite(450, 100, 'boss').setScale(0.4);
   boss.setImmovable(true);
   boss.body.setAllowGravity(false);
@@ -271,13 +272,13 @@ function spawnBoss() {
 }
 
 function handleBossHit(bullet, bossSprite) {
+    // Destroy bullet only once here
+    bullet.destroy();
   if (!bossSprite.active) return;
+
 
   bossHealth -= 10;
   updateBossHealthBar();
-
-  // Destroy bullet only once here
-  bullet.destroy();
 
   // Flash red briefly on hit
   bossSprite.setTint(0xff0000);
