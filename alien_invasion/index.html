@@ -262,6 +262,7 @@ function spawnBoss() {
   boss.body.setCollideWorldBounds(true);
 
   scene.physics.add.overlap(bullets, boss, (bullet, bossSprite) => {
+    if (!bullet.active || !bossSprite.active) return; 
     handleBossHit(bullet, bossSprite);
   });
 
