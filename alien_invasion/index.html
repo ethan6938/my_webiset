@@ -41,7 +41,8 @@ const config = {
   scene: { preload, create, update },
 };
 
-let ship, cursors, bullets, aliens, alienBullets, powerUpGroup, bossGroup;
+let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
+let boss, bossHealthBar, bossHealthBarBg, bossHealthText;
 let score, lives, level;
 let scoreText, livesText, levelText;
 let alienMoveDirection, alienSpeed, alienShootTimer;
@@ -50,7 +51,6 @@ let levelInProgress = true;
 let bossHealth = 900;
 let bossActive = false;
 let lastBossReinforce = 900;
-let boss, bossHealthBar, bossHealthBarBg, bossHealthText;
 
 function preload() {
   this.load.image('ship', 'images/ship.png');
@@ -73,7 +73,6 @@ function create() {
   alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
   aliens = this.physics.add.group();
   powerUpGroup = this.physics.add.group();
-  bossGroup = this.physics.add.group();
 
   createAliens();
 
@@ -153,7 +152,7 @@ function update() {
   alienShootTimer += scene.game.loop.delta;
   if (alienShootTimer > (2000 - level * 200)) {
     alienShootTimer = 0;
-    let shooter = bossActive ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
+    let shooter = bossActive && boss.active ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
     if (shooter) {
       let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
       if (bullet) {
@@ -189,6 +188,14 @@ function createAliens() {
   aliens.clear(true, true);
   for (let x = 100; x <= 700; x += 80) {
     for (let y = 50; y <= 150; y += 50) {
+      aliens.create(x, y, 'alien').setScale(0.05);
+    }
+  }
+}
+
+function spawnReinforcements() {
+  for (let x = 100; x <= 700; x += 80) {
+    for (let y = 250; y <= 350; y += 50) {
       aliens.create(x, y, 'alien').setScale(0.05);
     }
   }
@@ -234,9 +241,10 @@ function collectPowerUp(ship, powerUp) {
 function spawnBoss() {
   bossActive = true;
   boss = scene.physics.add.sprite(450, 100, 'boss').setScale(0.4);
-  bossGroup.add(boss);
   boss.setImmovable(true);
   boss.body.setAllowGravity(false);
+  boss.body.moves = false;
+
   scene.physics.add.overlap(bullets, boss, handleBossHit);
 
   bossHealthBarBg = scene.add.rectangle(boss.x, boss.y - 50, 160, 20, 0xff0000).setOrigin(0.5);
@@ -261,7 +269,7 @@ function handleBossHit(bullet, bossSprite) {
     bossSprite.destroy();
     endGame(true);
   } else if (bossHealth <= lastBossReinforce - 30) {
-    createAliens();
+    spawnReinforcements();
     lastBossReinforce = bossHealth;
   }
 }
