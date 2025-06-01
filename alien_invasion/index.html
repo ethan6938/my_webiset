@@ -40,6 +40,7 @@
       z-index: 10;
     }
 
+
     #shootBtn {
       position: absolute;
       bottom: 100px;
@@ -57,9 +58,8 @@
 </head>
 
 <body>
-  <!-- Only one joystickZone div -->
-  <div id="joystickZone"></div>
   <button id="restartBtn">Restart Game</button>
+  <div id="joystickZone"></div>
   <button id="shootBtn">🔫 Shoot</button>
 
   <script>
@@ -77,7 +77,6 @@
       scene: { preload, create, update },
     };
 
-    // Game variables
     let bossHealthBarBg, bossHealthBar;
     let bossGroup;
     let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
@@ -90,7 +89,7 @@
     let bossActive = false;
     let lastBossReinforce = 90;
     let moveLeft = false, moveRight = false;
-    let boss;
+
 
     function preload() {
       this.load.image('ship', 'images/ship.png');
@@ -116,6 +115,7 @@
 
       createAliens();
 
+
       this.physics.add.overlap(alienBullets, ship, handleShipHit);
       this.physics.add.overlap(bullets, aliens, handleAlienHit);
       this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
@@ -131,34 +131,14 @@
       levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
 
       this.input.keyboard.on('keydown-SPACE', shootBullet);
-
-      // Setup joystick here, inside create()
-      let joystick = nipplejs.create({
-        zone: document.getElementById('joystickZone'),
-        mode: 'static',
-        position: { left: '75px', bottom: '75px' }, // relative to zone div
-        color: 'white'
-      });
-
-      joystick.on('move', (evt, data) => {
-        if (data.direction) {
-          if (data.direction.angle === 'left') {
-            moveLeft = true;
-            moveRight = false;
-          } else if (data.direction.angle === 'right') {
-            moveRight = true;
-            moveLeft = false;
-          }
-        }
-      });
-
-      joystick.on('end', () => {
-        moveLeft = false;
-        moveRight = false;
-      });
-
-      // Touch shoot button
       document.getElementById('shootBtn').addEventListener('touchstart', shootBullet);
+      document.getElementById('leftBtn').addEventListener('touchstart', () => moveLeft = true);
+      document.getElementById('leftBtn').addEventListener('touchend', () => moveLeft = false);
+      document.getElementById('rightBtn').addEventListener('touchstart', () => moveRight = true);
+      document.getElementById('rightBtn').addEventListener('touchend', () => moveRight = false);
+
+
+      this.input.keyboard.on('keydown-SPACE', shootBullet);
 
       restartButton = document.getElementById('restartBtn');
       restartButton.style.display = 'none';
@@ -166,6 +146,36 @@
         scene.scene.restart();
       };
     }
+
+
+
+    // Joystick setup
+    let joystick = nipplejs.create({
+      zone: document.getElementById('joystickZone'),
+      mode: 'static',
+      position: { left: '50px', bottom: '50px' },
+      color: 'white'
+    });
+
+    joystick.on('move', (evt, data) => {
+      if (data.direction) {
+        if (data.direction.angle === 'left') {
+          moveLeft = true;
+          moveRight = false;
+        } else if (data.direction.angle === 'right') {
+          moveRight = true;
+          moveLeft = false;
+        }
+      }
+    });
+
+    joystick.on('end', () => {
+      moveLeft = false;
+      moveRight = false;
+    });
+
+    document.getElementById('shootBtn').addEventListener('touchstart', shootBullet);
+
 
     function resetGameVariables() {
       score = 0;
@@ -180,13 +190,10 @@
       bossActive = false;
       bossHealth = 900;
       lastBossReinforce = 90;
-      moveLeft = false;
-      moveRight = false;
-      boss = null;
     }
 
+
     function shootBullet() {
-      if (!ship) return;
       let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
       if (bullet) {
         bullet.setActive(true).setVisible(true);
@@ -197,14 +204,15 @@
       }
     }
 
+
     function update() {
       if (!ship || !ship.body || gameOverText) return;
 
+
       ship.setVelocityX(
         moveLeft ? -300 :
-          moveRight ? 300 : 0
+        moveRight ? 300 : 0
       );
-
       if (bossActive && boss) {
         boss.x += alienMoveDirection * 2;
         if (boss.x >= 850 || boss.x <= 50) {
@@ -260,10 +268,29 @@
 
     function createAliens() {
       aliens.clear(true, true);
-      for (let x = 100; x <= 700; x += 70) {
+      for (let x = 100; x <= 700; x += 80) {
         for (let y = 50; y <= 150; y += 50) {
-          aliens.create(x, y, 'alien').setScale(0.2);
+          aliens.create(x, y, 'alien').setScale(0.05);
         }
+      }
+    }
+
+    function handleShipHit(bullet, hitship) {
+      if (shipInvulnerable) return;
+
+      lives--;
+      livesText.setText('Lives: ' + lives);
+      shipInvulnerable = true;
+      hitship.setTint(0xff0000);
+
+      scene.time.delayedCall(1000, () => {
+        shipInvulnerable = false;
+        hitship.clearTint();
+      });
+
+      if (lives <= 0) {
+        bullet.destroy();
+        endGame(false);
       }
     }
 
@@ -274,81 +301,76 @@
       scoreText.setText('Score: ' + score);
     }
 
-    function handleShipHit(ship, alienBullet) {
-      if (shipInvulnerable) return;
-      alienBullet.destroy();
-      lives--;
-      livesText.setText('Lives: ' + lives);
-      if (lives <= 0) {
-        bullet.destroy();
-        endGame();
-      } else {
-        shipInvulnerable = true;
-        ship.setTint(0xff0000);
-        scene.time.delayedCall(1500, () => {
-          shipInvulnerable = false;
-          ship.clearTint();
-        });
-      }
-    }
-
     function dropPowerUp() {
-      let powerUp = powerUpGroup.create(Phaser.Math.Between(50, 850), 0, 'heart').setScale(0.15);
-      powerUp.body.velocity.y = 150;
-      powerUp.body.setSize(powerUp.width, powerUp.height);
+      let powerUp = powerUpGroup.create(Phaser.Math.Between(100, 800), 0, 'heart').setScale(0.05);
+      powerUp.setVelocityY(100);
     }
 
     function collectPowerUp(ship, powerUp) {
       powerUp.destroy();
-      lives++;
+      lives += 1;
       livesText.setText('Lives: ' + lives);
     }
 
     function spawnBoss() {
       bossActive = true;
-      boss = bossGroup.create(450, 100, 'boss').setScale(0.4);
+      boss = bossGroup.create(450, 100, 'boss').setScale(0.2); // ✅ Create in group
+      levelText.setText('Boss Level!');
+      dropPowerUp();
+      scene.time.delayedCall(3000, () => dropPowerUp());
+
+      // Show health bar
       bossHealthBarBg.setVisible(true);
       bossHealthBar.setVisible(true);
+      bossHealth = 900;
+      lastBossReinforce = 90;
+      updateBossHealthBar();
     }
 
-    function handleBossHit(bullet, boss) {
-      bullet.destroy();
+    function handleBossHit(bullet, bossSprite) {
+      bullet.destroy(); // Always destroy the bullet
+
       bossHealth -= 10;
+      updateBossHealthBar();
+
       if (bossHealth <= 0) {
-        boss.destroy();
-        bossActive = false;
-        bossHealthBarBg.setVisible(false);
-        bossHealthBar.setVisible(false);
+        bossSprite.destroy();
         endGame(true);
-      } else {
-        bossHealthBar.width = (bossHealth / 900) * 300;
-        if (bossHealth <= lastBossReinforce && bossHealth > 0) {
-          reinforceBoss();
-          lastBossReinforce -= 30;
+      } else if (bossHealth <= lastBossReinforce - 30) {
+        createAliens(); // Reinforcements every 30 health lost
+        lastBossReinforce = bossHealth;
+      }
+    }
+
+    function spawnReinforcements() {
+      for (let x = 100; x <= 700; x += 80) {
+        for (let y = 250; y <= 350; y += 50) {
+          const reinforcement = aliens.create(x, y, 'alien').setScale(0.05);
+          reinforcement.setActive(true).setVisible(true); // Ensure they're active
         }
       }
     }
 
-    function reinforceBoss() {
-      for (let i = 0; i < 3; i++) {
-        let x = Phaser.Math.Between(100, 800);
-        let y = Phaser.Math.Between(50, 300);
-        aliens.create(x, y, 'alien').setScale(0.2);
-      }
+    function updateBossHealthBar() {
+      const percent = Phaser.Math.Clamp(bossHealth / 900, 0, 1);
+      bossHealthBar.width = 300 * percent;
     }
 
-    function endGame(won = false) {
-      gameOverText = scene.add.text(400, 300, won ? 'You Win!' : 'Game Over', { fontSize: '64px', fill: '#fff' }).setOrigin(0.5);
+    function endGame(won) {
+      scene.scene.pause();
+      let message = won ? 'You Win! 🎉' : 'Game Over!';
+      let color = won ? '#0f0' : '#f00';
+      gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
       restartButton.style.display = 'block';
-      ship.setActive(false).setVisible(false);
-      aliens.clear(true, true);
-      alienBullets.clear(true, true);
-      bullets.clear(true, true);
-      powerUpGroup.clear(true, true);
+
+      // Hide boss health bar
+      bossHealthBar.setVisible(false);
+      bossHealthBarBg.setVisible(false);
     }
 
     new Phaser.Game(config);
   </script>
+
 </body>
 
 </html>
