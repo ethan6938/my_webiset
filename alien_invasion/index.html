@@ -213,60 +213,63 @@
 
       // Combine keyboard + joystick control
       let velocityX = 0;
-      if (cursors.left.isDown) velocityX = -300;
-      else if (cursors.right.isDown) velocityX = 300;
-      if (moveLeft) velocityX = -300;
-      else if (moveRight) velocityX = 300;
-      if (bossActive && boss) {
-        boss.x += alienMoveDirection * 2;
-        if (boss.x >= 850 || boss.x <= 50) {
-          alienMoveDirection *= -1;
+
+      if (cursors.left.isDown) {
+        velocityX = -300;
+      } else if (cursors.right.isDown) {
+        velocityX = 300;
+      } else if (moveLeft) {
+        velocityX = -300;
+      } else if (moveRight) {
+        velocityX = 300;
+      }
+
+      ship.setVelocityX(velocityX);
+
+    }  {
+      let moveX = alienSpeed * alienMoveDirection * (1 / 60);
+      aliens.children.iterate(alien => alien.x += moveX);
+
+      let xs = aliens.getChildren().map(a => a.x);
+      let leftMost = Math.min(...xs), rightMost = Math.max(...xs);
+      if (rightMost > 850 || leftMost < 50) {
+        alienMoveDirection *= -1;
+        aliens.children.iterate(a => a.y += 10);
+      }
+    }
+
+    alienShootTimer += scene.game.loop.delta;
+    if (alienShootTimer > (2000 - level * 200)) {
+      alienShootTimer = 0;
+      let shooter = bossActive ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
+      if (shooter) {
+        let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
+        if (bullet) {
+          bullet.setActive(true).setVisible(true);
+          bullet.body.enable = true;
+          bullet.setScale(0.1);
+          bullet.body.velocity.y = 300 + (level * 20);
         }
+      }
+    }
+
+    bullets.children.iterate(b => b && b.y < 0 && b.destroy());
+    alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
+
+    if (!bossActive && aliens.countActive() === 0 && levelInProgress) {
+      levelInProgress = false;
+      if (level < maxLevel) {
+        level++;
+        levelText.setText('Level: ' + level);
+        alienSpeed += 10;
+        if (level % 2 === 0) dropPowerUp();
+
+        scene.time.delayedCall(1000, () => {
+          createAliens();
+          levelInProgress = true;
+        });
       } else {
-        let moveX = alienSpeed * alienMoveDirection * (1 / 60);
-        aliens.children.iterate(alien => alien.x += moveX);
-
-        let xs = aliens.getChildren().map(a => a.x);
-        let leftMost = Math.min(...xs), rightMost = Math.max(...xs);
-        if (rightMost > 850 || leftMost < 50) {
-          alienMoveDirection *= -1;
-          aliens.children.iterate(a => a.y += 10);
-        }
-      }
-
-      alienShootTimer += scene.game.loop.delta;
-      if (alienShootTimer > (2000 - level * 200)) {
-        alienShootTimer = 0;
-        let shooter = bossActive ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
-        if (shooter) {
-          let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
-          if (bullet) {
-            bullet.setActive(true).setVisible(true);
-            bullet.body.enable = true;
-            bullet.setScale(0.1);
-            bullet.body.velocity.y = 300 + (level * 20);
-          }
-        }
-      }
-
-      bullets.children.iterate(b => b && b.y < 0 && b.destroy());
-      alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
-
-      if (!bossActive && aliens.countActive() === 0 && levelInProgress) {
-        levelInProgress = false;
-        if (level < maxLevel) {
-          level++;
-          levelText.setText('Level: ' + level);
-          alienSpeed += 10;
-          if (level % 2 === 0) dropPowerUp();
-
-          scene.time.delayedCall(1000, () => {
-            createAliens();
-            levelInProgress = true;
-          });
-        } else {
-          scene.time.delayedCall(500, () => spawnBoss());
-        }
+        scene.time.delayedCall(500, () => spawnBoss());
       }
     }
 
