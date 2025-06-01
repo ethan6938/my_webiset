@@ -130,16 +130,7 @@
       livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
       levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
 
-      this.input.keyboard.on('keydown-SPACE', () => {
-        let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
-        if (bullet) {
-          bullet.setActive(true).setVisible(true);
-          bullet.body.enable = true;
-          bullet.setScale(0.2);
-          bullet.body.velocity.y = -400;
-          bullet.body.setSize(bullet.width, bullet.height);
-        }
-      });
+      this.input.keyboard.on('keydown-SPACE', shootBullet);
 
       restartButton = document.getElementById('restartBtn');
       restartButton.style.display = 'none';
@@ -220,11 +211,12 @@
     function update() {
       if (!ship || !ship.body || gameOverText) return;
 
-
-      ship.setVelocityX(
-        moveLeft ? -300 :
-          moveRight ? 300 : 0
-      );
+      // Combine keyboard + joystick control
+      let velocityX = 0;
+      if (cursors.left.isDown) velocityX = -300;
+      else if (cursors.right.isDown) velocityX = 300;
+      if (moveLeft) velocityX = -300;
+      else if (moveRight) velocityX = 300;
       if (bossActive && boss) {
         boss.x += alienMoveDirection * 2;
         if (boss.x >= 850 || boss.x <= 50) {
