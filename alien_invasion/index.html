@@ -149,33 +149,44 @@
 
 
 
-    // Joystick setup
-    let joystick = nipplejs.create({
-      zone: document.getElementById('joystickZone'),
-      mode: 'static',
-      position: { left: '50px', bottom: '50px' },
-      color: 'white'
-    });
+    
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const joystickZone = document.getElementById('joystickZone');
+      const shootBtn = document.getElementById('shootBtn');
 
-    joystick.on('move', (evt, data) => {
-      if (data.direction) {
-        if (data.direction.angle === 'left') {
-          moveLeft = true;
-          moveRight = false;
-        } else if (data.direction.angle === 'right') {
-          moveRight = true;
+      if (isTouchDevice) {
+        joystickZone.style.display = 'block';
+        shootBtn.style.display = 'block';
+
+        let joystick = nipplejs.create({
+          zone: joystickZone,
+          mode: 'static',
+          position: { left: '75px', bottom: '75px' },
+          color: 'white'
+        });
+
+        joystick.on('move', (evt, data) => {
+          if (data.direction) {
+            if (data.direction.angle === 'left') {
+              moveLeft = true;
+              moveRight = false;
+            } else if (data.direction.angle === 'right') {
+              moveRight = true;
+              moveLeft = false;
+            }
+          }
+        });
+
+        joystick.on('end', () => {
           moveLeft = false;
-        }
+          moveRight = false;
+        });
+
+        shootBtn.addEventListener('touchstart', shootBullet);
+      } else {
+        joystickZone.style.display = 'none';
+        shootBtn.style.display = 'none';
       }
-    });
-
-    joystick.on('end', () => {
-      moveLeft = false;
-      moveRight = false;
-    });
-
-    document.getElementById('shootBtn').addEventListener('touchstart', shootBullet);
-
 
     function resetGameVariables() {
       score = 0;
