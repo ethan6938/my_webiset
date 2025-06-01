@@ -280,6 +280,7 @@
       lives--;
       livesText.setText('Lives: ' + lives);
       if (lives <= 0) {
+        bullet.destroy();
         endGame();
       } else {
         shipInvulnerable = true;
