@@ -131,7 +131,6 @@
       levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
 
       this.input.keyboard.on('keydown-SPACE', shootBullet);
-      document.getElementById('shootBtn').addEventListener('touchstart', shootBullet);
       document.getElementById('leftBtn').addEventListener('touchstart', () => moveLeft = true);
       document.getElementById('leftBtn').addEventListener('touchend', () => moveLeft = false);
       document.getElementById('rightBtn').addEventListener('touchstart', () => moveRight = true);
