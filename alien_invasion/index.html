@@ -30,32 +30,36 @@
       z-index: 10;
     }
 
-    #controls {
+    #joystickZone {
       position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 60px;
+      left: 20px;
+      width: 150px;
+      height: 150px;
       z-index: 10;
     }
 
-    #controls button {
-      background-color: rgba(255, 255, 255, 0.2);
+
+    #shootBtn {
+      position: absolute;
+      bottom: 100px;
+      right: 30px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      font-size: 20px;
+      background: rgba(255, 255, 255, 0.2);
       color: white;
       border: 2px solid white;
-      font-size: 24px;
-      margin: 0 10px;
-      padding: 15px 25px;
-      border-radius: 10px;
+      z-index: 10;
     }
   </style>
 </head>
 
 <body>
   <button id="restartBtn">Restart Game</button>
-  <div id="controls">
-    <button id="leftBtn">◀</button>
-    <button id="shootBtn">⬆</button>
-    <button id="rightBtn">▶</button>
+  <div id="joystickZone"></div>
+  <button id="shootBtn">🔫 Shoot</button>
   </div>
 
   <script>
@@ -84,9 +88,8 @@
     let bossHealth = 900;
     let bossActive = false;
     let lastBossReinforce = 90;
+    let moveLeft = false, moveRight = false;
 
-    let moveLeft = false;
-    let moveRight = false;
 
     function preload() {
       this.load.image('ship', 'images/ship.png');
@@ -134,19 +137,8 @@
       document.getElementById('rightBtn').addEventListener('touchstart', () => moveRight = true);
       document.getElementById('rightBtn').addEventListener('touchend', () => moveRight = false);
 
-      restartButton = document.getElementById('restartBtn');
-      restartButton.style.display = 'none';
-      restartButton.onclick = () => scene.scene.restart();
 
-      this.input.keyboard.on('keydown-SPACE', () => {
-        let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
-        if (bullet) {
-          bullet.setActive(true).setVisible(true);
-          bullet.body.enable = true;
-          bullet.setScale(0.2);
-          bullet.body.velocity.y = -400;
-        }
-      });
+      this.input.keyboard.on('keydown-SPACE', shootBullet);
 
       restartButton = document.getElementById('restartBtn');
       restartButton.style.display = 'none';
@@ -154,6 +146,36 @@
         scene.scene.restart();
       };
     }
+
+
+
+    // Joystick setup
+    let joystick = nipplejs.create({
+      zone: document.getElementById('joystickZone'),
+      mode: 'static',
+      position: { left: '50px', bottom: '50px' },
+      color: 'white'
+    });
+
+    joystick.on('move', (evt, data) => {
+      if (data.direction) {
+        if (data.direction.angle === 'left') {
+          moveLeft = true;
+          moveRight = false;
+        } else if (data.direction.angle === 'right') {
+          moveRight = true;
+          moveLeft = false;
+        }
+      }
+    });
+
+    joystick.on('end', () => {
+      moveLeft = false;
+      moveRight = false;
+    });
+
+    document.getElementById('shootBtn').addEventListener('touchstart', shootBullet);
+
 
     function resetGameVariables() {
       score = 0;
@@ -188,8 +210,8 @@
 
 
       ship.setVelocityX(
-        (cursors.left.isDown || moveLeft) ? -300 :
-          (cursors.right.isDown || moveRight) ? 300 : 0
+        moveLeft ? -300 :
+        moveRight ? 300 : 0
       );
       if (bossActive && boss) {
         boss.x += alienMoveDirection * 2;
