@@ -130,7 +130,16 @@
       livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
       levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
 
-      this.input.keyboard.on('keydown-SPACE', shootBullet);
+      this.input.keyboard.on('keydown-SPACE', () => {
+        let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
+        if (bullet) {
+          bullet.setActive(true).setVisible(true);
+          bullet.body.enable = true;
+          bullet.setScale(0.2);
+          bullet.body.velocity.y = -400;
+          bullet.body.setSize(bullet.width, bullet.height);
+        }
+      });
 
       restartButton = document.getElementById('restartBtn');
       restartButton.style.display = 'none';
@@ -141,44 +150,44 @@
 
 
 
-    
+
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      const joystickZone = document.getElementById('joystickZone');
-      const shootBtn = document.getElementById('shootBtn');
+    const joystickZone = document.getElementById('joystickZone');
+    const shootBtn = document.getElementById('shootBtn');
 
-      if (isTouchDevice) {
-        joystickZone.style.display = 'block';
-        shootBtn.style.display = 'block';
+    if (isTouchDevice) {
+      joystickZone.style.display = 'block';
+      shootBtn.style.display = 'block';
 
-        let joystick = nipplejs.create({
-          zone: joystickZone,
-          mode: 'static',
-          position: { left: '75px', bottom: '75px' },
-          color: 'white'
-        });
+      let joystick = nipplejs.create({
+        zone: joystickZone,
+        mode: 'static',
+        position: { left: '75px', bottom: '75px' },
+        color: 'white'
+      });
 
-        joystick.on('move', (evt, data) => {
-          if (data.direction) {
-            if (data.direction.angle === 'left') {
-              moveLeft = true;
-              moveRight = false;
-            } else if (data.direction.angle === 'right') {
-              moveRight = true;
-              moveLeft = false;
-            }
+      joystick.on('move', (evt, data) => {
+        if (data.direction) {
+          if (data.direction.angle === 'left') {
+            moveLeft = true;
+            moveRight = false;
+          } else if (data.direction.angle === 'right') {
+            moveRight = true;
+            moveLeft = false;
           }
-        });
+        }
+      });
 
-        joystick.on('end', () => {
-          moveLeft = false;
-          moveRight = false;
-        });
+      joystick.on('end', () => {
+        moveLeft = false;
+        moveRight = false;
+      });
 
-        shootBtn.addEventListener('touchstart', shootBullet);
-      } else {
-        joystickZone.style.display = 'none';
-        shootBtn.style.display = 'none';
-      }
+      shootBtn.addEventListener('touchstart', shootBullet);
+    } else {
+      joystickZone.style.display = 'none';
+      shootBtn.style.display = 'none';
+    }
 
     function resetGameVariables() {
       score = 0;
@@ -214,7 +223,7 @@
 
       ship.setVelocityX(
         moveLeft ? -300 :
-        moveRight ? 300 : 0
+          moveRight ? 300 : 0
       );
       if (bossActive && boss) {
         boss.x += alienMoveDirection * 2;
