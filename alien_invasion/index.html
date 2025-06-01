@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Alien Invasion</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
   <style>
-    body { margin: 0; background-color: black; }
-    canvas { display: block; margin: 0 auto; }
+    body {
+      margin: 0;
+      background-color: black;
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
+
     #restartBtn {
       position: absolute;
       top: 80px;
@@ -20,275 +29,326 @@
       display: none;
       z-index: 10;
     }
+
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+
+    #controls button {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid white;
+      font-size: 24px;
+      margin: 0 10px;
+      padding: 15px 25px;
+      border-radius: 10px;
+    }
   </style>
 </head>
+
 <body>
+  <button id="restartBtn">Restart Game</button>
+  <div id="controls">
+    <button id="leftBtn">◀</button>
+    <button id="shootBtn">⬆</button>
+    <button id="rightBtn">▶</button>
+  </div>
 
-<button id="restartBtn">Restart Game</button>
+  <script>
+    const maxLevel = 5;
 
-<script>
-const maxLevel = 5;
+    const config = {
+      type: Phaser.AUTO,
+      width: 900,
+      height: 600,
+      backgroundColor: '#000000',
+      physics: {
+        default: 'arcade',
+        arcade: { debug: false },
+      },
+      scene: { preload, create, update },
+    };
 
-const config = {
-  type: Phaser.AUTO,
-  width: 900,
-  height: 600,
-  backgroundColor: '#000000',
-  physics: {
-    default: 'arcade',
-    arcade: { debug: false },
-  },
-  scene: { preload, create, update },
-};
+    let bossHealthBarBg, bossHealthBar;
+    let bossGroup;
+    let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
+    let score, lives, level;
+    let scoreText, livesText, levelText;
+    let alienMoveDirection, alienSpeed, alienShootTimer;
+    let shipInvulnerable, scene, gameOverText, restartButton;
+    let levelInProgress = true;
+    let bossHealth = 900;
+    let bossActive = false;
+    let lastBossReinforce = 90;
 
-let bossHealthBarBg, bossHealthBar;
-let bossGroup;
-let ship, cursors, bullets, aliens, alienBullets, powerUpGroup;
-let score, lives, level;
-let scoreText, livesText, levelText;
-let alienMoveDirection, alienSpeed, alienShootTimer;
-let shipInvulnerable, scene, gameOverText, restartButton;
-let levelInProgress = true;
-let bossHealth = 900;
-let bossActive = false;
-let lastBossReinforce = 90;
+    let moveLeft = false;
+    let moveRight = false;
 
-function preload() {
-  this.load.image('ship', 'images/ship.png');
-  this.load.image('alien', 'images/alien.png');
-  this.load.image('bullet', 'images/bullet.png');
-  this.load.image('alienBullet', 'images/alienbullet.png');
-  this.load.image('heart', 'images/heart.png');
-  this.load.image('boss', 'images/boss.png');
-}
-
-function create() {
-  scene = this;
-  resetGameVariables();
-
-  ship = this.physics.add.sprite(250, 500, 'ship').setScale(0.2);
-  ship.setCollideWorldBounds(true);
-  cursors = this.input.keyboard.createCursorKeys();
-
-  bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 10 });
-  alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
-  aliens = this.physics.add.group();
-  powerUpGroup = this.physics.add.group();
-
-  createAliens();
-  spawnReinforcements();
-
-  this.physics.add.overlap(alienBullets, ship, handleShipHit);
-  this.physics.add.overlap(bullets, aliens, handleAlienHit);
-  this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
-
-  bossHealthBarBg = scene.add.rectangle(300, 20, 300, 20, 0xff0000).setVisible(false);
-  bossHealthBar = scene.add.rectangle(300, 20, 300, 20, 0x00ff00).setVisible(false);
-
-  bossGroup = this.physics.add.group();
-  this.physics.add.overlap(bullets, bossGroup, handleBossHit);
-
-  scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
-  livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
-  levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
-
-  this.input.keyboard.on('keydown-SPACE', () => {
-    let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
-    if (bullet) {
-      bullet.setActive(true).setVisible(true);
-      bullet.body.enable = true;
-      bullet.setScale(0.2);
-      bullet.body.velocity.y = -400;
+    function preload() {
+      this.load.image('ship', 'images/ship.png');
+      this.load.image('alien', 'images/alien.png');
+      this.load.image('bullet', 'images/bullet.png');
+      this.load.image('alienBullet', 'images/alienbullet.png');
+      this.load.image('heart', 'images/heart.png');
+      this.load.image('boss', 'images/boss.png');
     }
-  });
 
-  restartButton = document.getElementById('restartBtn');
-  restartButton.style.display = 'none';
-  restartButton.onclick = () => {
-    scene.scene.restart();
-  };
-}
+    function create() {
+      scene = this;
+      resetGameVariables();
 
-function resetGameVariables() {
-  score = 0;
-  lives = 3;
-  level = 1;
-  alienMoveDirection = 1;
-  alienSpeed = 20;
-  alienShootTimer = 0;
-  shipInvulnerable = false;
-  gameOverText = null;
-  levelInProgress = true;
-  bossActive = false;
-  bossHealth = 900;
-  lastBossReinforce = 90;
-}
+      ship = this.physics.add.sprite(250, 500, 'ship').setScale(0.2);
+      ship.setCollideWorldBounds(true);
+      cursors = this.input.keyboard.createCursorKeys();
 
-function update() {
-  if (!ship || !ship.body || gameOverText) return;
+      bullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 10 });
+      alienBullets = this.physics.add.group({ classType: Phaser.Physics.Arcade.Image, maxSize: 20 });
+      aliens = this.physics.add.group();
+      powerUpGroup = this.physics.add.group();
 
-  ship.setVelocityX(
-    cursors.left.isDown ? -300 :
-    cursors.right.isDown ? 300 : 0
-  );
+      createAliens();
 
-  if (bossActive && boss) {
-    boss.x += alienMoveDirection * 2;
-    if (boss.x >= 850 || boss.x <= 50) {
-      alienMoveDirection *= -1;
+
+      this.physics.add.overlap(alienBullets, ship, handleShipHit);
+      this.physics.add.overlap(bullets, aliens, handleAlienHit);
+      this.physics.add.overlap(ship, powerUpGroup, collectPowerUp);
+
+      bossHealthBarBg = scene.add.rectangle(300, 20, 300, 20, 0xff0000).setVisible(false);
+      bossHealthBar = scene.add.rectangle(300, 20, 300, 20, 0x00ff00).setVisible(false);
+
+      bossGroup = this.physics.add.group();
+      this.physics.add.overlap(bullets, bossGroup, handleBossHit);
+
+      scoreText = this.add.text(10, 10, 'Score: 0', { fontSize: '20px', fill: '#fff' });
+      livesText = this.add.text(10, 40, 'Lives: 3', { fontSize: '20px', fill: '#fff' });
+      levelText = this.add.text(10, 70, 'Level: 1', { fontSize: '20px', fill: '#fff' });
+
+      this.input.keyboard.on('keydown-SPACE', shootBullet);
+      document.getElementById('shootBtn').addEventListener('touchstart', shootBullet);
+      document.getElementById('leftBtn').addEventListener('touchstart', () => moveLeft = true);
+      document.getElementById('leftBtn').addEventListener('touchend', () => moveLeft = false);
+      document.getElementById('rightBtn').addEventListener('touchstart', () => moveRight = true);
+      document.getElementById('rightBtn').addEventListener('touchend', () => moveRight = false);
+
+      restartButton = document.getElementById('restartBtn');
+      restartButton.style.display = 'none';
+      restartButton.onclick = () => scene.scene.restart();
+
+      this.input.keyboard.on('keydown-SPACE', () => {
+        let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
+        if (bullet) {
+          bullet.setActive(true).setVisible(true);
+          bullet.body.enable = true;
+          bullet.setScale(0.2);
+          bullet.body.velocity.y = -400;
+        }
+      });
+
+      restartButton = document.getElementById('restartBtn');
+      restartButton.style.display = 'none';
+      restartButton.onclick = () => {
+        scene.scene.restart();
+      };
     }
-  } else {
-    let moveX = alienSpeed * alienMoveDirection * (1 / 60);
-    aliens.children.iterate(alien => alien.x += moveX);
 
-    let xs = aliens.getChildren().map(a => a.x);
-    let leftMost = Math.min(...xs), rightMost = Math.max(...xs);
-    if (rightMost > 850 || leftMost < 50) {
-      alienMoveDirection *= -1;
-      aliens.children.iterate(a => a.y += 10);
+    function resetGameVariables() {
+      score = 0;
+      lives = 3;
+      level = 1;
+      alienMoveDirection = 1;
+      alienSpeed = 20;
+      alienShootTimer = 0;
+      shipInvulnerable = false;
+      gameOverText = null;
+      levelInProgress = true;
+      bossActive = false;
+      bossHealth = 900;
+      lastBossReinforce = 90;
     }
-  }
 
-  alienShootTimer += scene.game.loop.delta;
-  if (alienShootTimer > (2000 - level * 200)) {
-    alienShootTimer = 0;
-    let shooter = bossActive ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
-    if (shooter) {
-      let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
+
+    function shootBullet() {
+      let bullet = bullets.get(ship.x, ship.y - 20, 'bullet');
       if (bullet) {
         bullet.setActive(true).setVisible(true);
         bullet.body.enable = true;
-        bullet.setScale(0.1);
-        bullet.body.velocity.y = 300 + (level * 20);
+        bullet.setScale(0.2);
+        bullet.body.velocity.y = -400;
+        bullet.body.setSize(bullet.width, bullet.height);
       }
     }
-  }
 
-  bullets.children.iterate(b => b && b.y < 0 && b.destroy());
-  alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
 
-  if (!bossActive && aliens.countActive() === 0 && levelInProgress) {
-    levelInProgress = false;
-    if (level < maxLevel) {
-      level++;
-      levelText.setText('Level: ' + level);
-      alienSpeed += 10;
-      if (level % 2 === 0) dropPowerUp();
+    function update() {
+      if (!ship || !ship.body || gameOverText) return;
+
+
+      ship.setVelocityX(
+        (cursors.left.isDown || moveLeft) ? -300 :
+          (cursors.right.isDown || moveRight) ? 300 : 0
+      );
+      if (bossActive && boss) {
+        boss.x += alienMoveDirection * 2;
+        if (boss.x >= 850 || boss.x <= 50) {
+          alienMoveDirection *= -1;
+        }
+      } else {
+        let moveX = alienSpeed * alienMoveDirection * (1 / 60);
+        aliens.children.iterate(alien => alien.x += moveX);
+
+        let xs = aliens.getChildren().map(a => a.x);
+        let leftMost = Math.min(...xs), rightMost = Math.max(...xs);
+        if (rightMost > 850 || leftMost < 50) {
+          alienMoveDirection *= -1;
+          aliens.children.iterate(a => a.y += 10);
+        }
+      }
+
+      alienShootTimer += scene.game.loop.delta;
+      if (alienShootTimer > (2000 - level * 200)) {
+        alienShootTimer = 0;
+        let shooter = bossActive ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
+        if (shooter) {
+          let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
+          if (bullet) {
+            bullet.setActive(true).setVisible(true);
+            bullet.body.enable = true;
+            bullet.setScale(0.1);
+            bullet.body.velocity.y = 300 + (level * 20);
+          }
+        }
+      }
+
+      bullets.children.iterate(b => b && b.y < 0 && b.destroy());
+      alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
+
+      if (!bossActive && aliens.countActive() === 0 && levelInProgress) {
+        levelInProgress = false;
+        if (level < maxLevel) {
+          level++;
+          levelText.setText('Level: ' + level);
+          alienSpeed += 10;
+          if (level % 2 === 0) dropPowerUp();
+
+          scene.time.delayedCall(1000, () => {
+            createAliens();
+            levelInProgress = true;
+          });
+        } else {
+          scene.time.delayedCall(500, () => spawnBoss());
+        }
+      }
+    }
+
+    function createAliens() {
+      aliens.clear(true, true);
+      for (let x = 100; x <= 700; x += 80) {
+        for (let y = 50; y <= 150; y += 50) {
+          aliens.create(x, y, 'alien').setScale(0.05);
+        }
+      }
+    }
+
+    function handleShipHit(bullet, hitship) {
+      if (shipInvulnerable) return;
+
+      lives--;
+      livesText.setText('Lives: ' + lives);
+      shipInvulnerable = true;
+      hitship.setTint(0xff0000);
 
       scene.time.delayedCall(1000, () => {
-        createAliens();
-        levelInProgress = true;
+        shipInvulnerable = false;
+        hitship.clearTint();
       });
-    } else {
-      scene.time.delayedCall(500, () => spawnBoss());
+
+      if (lives <= 0) {
+        bullet.destroy();
+        endGame(false);
+      }
     }
-  }
-}
 
-function createAliens() {
-  aliens.clear(true, true);
-  for (let x = 100; x <= 700; x += 80) {
-    for (let y = 50; y <= 150; y += 50) {
-      aliens.create(x, y, 'alien').setScale(0.05);
+    function handleAlienHit(bullet, alien) {
+      bullet.destroy();
+      alien.destroy();
+      score += 10;
+      scoreText.setText('Score: ' + score);
     }
-  }
-}
 
-function handleShipHit(bullet, hitship) {
-  if (shipInvulnerable) return;
-
-  lives--;
-  livesText.setText('Lives: ' + lives);
-  shipInvulnerable = true;
-  hitship.setTint(0xff0000);
-
-  scene.time.delayedCall(1000, () => {
-    shipInvulnerable = false;
-    hitship.clearTint();
-  });
-
-  if (lives <= 0) {
-    bullet.destroy();
-    endGame(false);
-  }
-}
-
-function handleAlienHit(bullet, alien) {
-  bullet.destroy();
-  alien.destroy();
-  score += 10;
-  scoreText.setText('Score: ' + score);
-}
-
-function dropPowerUp() {
-  let powerUp = powerUpGroup.create(Phaser.Math.Between(100, 800), 0, 'heart').setScale(0.05);
-  powerUp.setVelocityY(100);
-}
-
-function collectPowerUp(ship, powerUp) {
-  powerUp.destroy();
-  lives += 1;
-  livesText.setText('Lives: ' + lives);
-}
-
-function spawnBoss() {
-  bossActive = true;
-  boss = bossGroup.create(450, 100, 'boss').setScale(0.2); // ✅ Create in group
-  levelText.setText('Boss Level!');
-  dropPowerUp();
-  scene.time.delayedCall(3000, () => dropPowerUp());
-
-  // Show health bar
-  bossHealthBarBg.setVisible(true);
-  bossHealthBar.setVisible(true);
-  bossHealth = 900;
-  lastBossReinforce = 90;
-  updateBossHealthBar();
-}
-
-function handleBossHit(bullet, bossSprite) {
-  bullet.destroy(); // Always destroy the bullet
-
-  bossHealth -= 10;
-  updateBossHealthBar();
-
-  if (bossHealth <= 0) {
-    bossSprite.destroy();
-    endGame(true);
-  } else if (bossHealth <= lastBossReinforce - 30) {
-    createAliens(); // Reinforcements every 30 health lost
-    lastBossReinforce = bossHealth;
-  }
-}
-
-function spawnReinforcements() {
-  for (let x = 100; x <= 700; x += 80) {
-    for (let y = 250; y <= 350; y += 50) {
-      const reinforcement = aliens.create(x, y, 'alien').setScale(0.05);
-      reinforcement.setActive(true).setVisible(true); // Ensure they're active
+    function dropPowerUp() {
+      let powerUp = powerUpGroup.create(Phaser.Math.Between(100, 800), 0, 'heart').setScale(0.05);
+      powerUp.setVelocityY(100);
     }
-  }
-}
 
-function updateBossHealthBar() {
-  const percent = Phaser.Math.Clamp(bossHealth / 900, 0, 1);
-  bossHealthBar.width = 300 * percent;
-}
+    function collectPowerUp(ship, powerUp) {
+      powerUp.destroy();
+      lives += 1;
+      livesText.setText('Lives: ' + lives);
+    }
 
-function endGame(won) {
-  scene.scene.pause();
-  let message = won ? 'You Win! 🎉' : 'Game Over!';
-  let color = won ? '#0f0' : '#f00';
-  gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
-  restartButton.style.display = 'block';
+    function spawnBoss() {
+      bossActive = true;
+      boss = bossGroup.create(450, 100, 'boss').setScale(0.2); // ✅ Create in group
+      levelText.setText('Boss Level!');
+      dropPowerUp();
+      scene.time.delayedCall(3000, () => dropPowerUp());
 
-  // Hide boss health bar
-  bossHealthBar.setVisible(false);
-  bossHealthBarBg.setVisible(false);
-}
+      // Show health bar
+      bossHealthBarBg.setVisible(true);
+      bossHealthBar.setVisible(true);
+      bossHealth = 900;
+      lastBossReinforce = 90;
+      updateBossHealthBar();
+    }
 
-new Phaser.Game(config);
-</script>
+    function handleBossHit(bullet, bossSprite) {
+      bullet.destroy(); // Always destroy the bullet
+
+      bossHealth -= 10;
+      updateBossHealthBar();
+
+      if (bossHealth <= 0) {
+        bossSprite.destroy();
+        endGame(true);
+      } else if (bossHealth <= lastBossReinforce - 30) {
+        createAliens(); // Reinforcements every 30 health lost
+        lastBossReinforce = bossHealth;
+      }
+    }
+
+    function spawnReinforcements() {
+      for (let x = 100; x <= 700; x += 80) {
+        for (let y = 250; y <= 350; y += 50) {
+          const reinforcement = aliens.create(x, y, 'alien').setScale(0.05);
+          reinforcement.setActive(true).setVisible(true); // Ensure they're active
+        }
+      }
+    }
+
+    function updateBossHealthBar() {
+      const percent = Phaser.Math.Clamp(bossHealth / 900, 0, 1);
+      bossHealthBar.width = 300 * percent;
+    }
+
+    function endGame(won) {
+      scene.scene.pause();
+      let message = won ? 'You Win! 🎉' : 'Game Over!';
+      let color = won ? '#0f0' : '#f00';
+      gameOverText = scene.add.text(300, 300, message, { fontSize: '48px', fill: color });
+      restartButton.style.display = 'block';
+
+      // Hide boss health bar
+      bossHealthBar.setVisible(false);
+      bossHealthBarBg.setVisible(false);
+    }
+
+    new Phaser.Game(config);
+  </script>
 
 </body>
+
 </html>
