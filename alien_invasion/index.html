@@ -7,13 +7,9 @@
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.9.0/dist/nipplejs.min.js"></script>
   <style>
-    html,
     body {
       margin: 0;
-      padding: 0;
       background-color: black;
-      height: 100%;
-      overflow: hidden;
     }
 
     canvas {
@@ -70,13 +66,13 @@
 
   <script>
 
-    // ✅ Define this first
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+     // ✅ Define this first
+     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     if (isTouchDevice && window.innerHeight > window.innerWidth) {
       alert('Please rotate your phone to landscape (horizontal) mode for the best experience.');
     }
-
+    
     const maxLevel = 5;
 
     const config = {
