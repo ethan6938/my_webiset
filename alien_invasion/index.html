@@ -269,7 +269,7 @@
 
   // Boss & reinforcement shooting
   alienShootTimer += scene.game.loop.delta;
-    if (alienShootTimer > (2000 - level * 200)) {
+    if (alienShootTimer > (4000 - level * 200)) {
       alienShootTimer = 0;
 
       let shooters = aliens.getChildren().filter(a => a.active);
