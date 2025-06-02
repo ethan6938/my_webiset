@@ -253,7 +253,7 @@
 
   // Alien shooting
   alienShootTimer += scene.game.loop.delta;
-  if (alienShootTimer > (2000 - level * 200)) {
+  if (alienShootTimer > (4000 - level * 200)) {
     alienShootTimer = 0;
     let shooter = bossActive ? boss : Phaser.Utils.Array.GetRandom(aliens.getChildren());
     if (shooter) {
