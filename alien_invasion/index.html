@@ -64,6 +64,9 @@
 
   <script>
 
+     // ✅ Define this first
+     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
     if (isTouchDevice && window.innerHeight > window.innerWidth) {
       alert('Please rotate your phone to landscape (horizontal) mode for the best experience.');
     }
@@ -148,7 +151,6 @@
 
 
 
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const joystickZone = document.getElementById('joystickZone');
     const shootBtn = document.getElementById('shootBtn');
 
