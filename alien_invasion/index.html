@@ -114,7 +114,8 @@
       scene = this;
       resetGameVariables();
 
-      ship = this.physics.add.sprite(250, 500, 'ship').setScale(0.2);
+      let safeY = Math.min(this.scale.height - 80, 500); // never let it go offscreen
+      ship = this.physics.add.sprite(this.scale.width / 2, safeY, 'ship').setScale(0.2);
       ship.setCollideWorldBounds(true);
       cursors = this.input.keyboard.createCursorKeys();
 
