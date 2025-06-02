@@ -12,12 +12,13 @@
       background-color: black;
     }
 
-    @media (max-width: 900px), (max-height: 600px) {
-    canvas {
-      width: 100vw !important;
-      height: 100vh !important;
+    /* Phones only */
+    @media (hover: none) and (pointer: coarse) {
+      canvas {
+        width: 100vw !important;
+        height: 100vh !important;
+      }
     }
-  }
 
     canvas {
       display: block;
