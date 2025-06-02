@@ -12,11 +12,16 @@
       background-color: black;
     }
 
+    @media only screen and (max-width: 768px) {
+      canvas {
+        width: 100vw;
+        height: 100vh;
+      }
+    }
+
     canvas {
       display: block;
       margin: 0 auto;
-      width: 100vw;
-      height: 100vh;
     }
 
     #restartBtn {
@@ -66,13 +71,13 @@
 
   <script>
 
-     // ✅ Define this first
-     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // ✅ Define this first
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     if (isTouchDevice && window.innerHeight > window.innerWidth) {
       alert('Please rotate your phone to landscape (horizontal) mode for the best experience.');
     }
-    
+
     const maxLevel = 5;
 
     const config = {
