@@ -12,12 +12,12 @@
       background-color: black;
     }
 
-    @media only screen and (max-width: 900px) {
-      canvas {
-        width: 100vw;
-        height: 100vh;
-      }
+    @media (max-width: 900px), (max-height: 600px) {
+    canvas {
+      width: 100vw !important;
+      height: 100vh !important;
     }
+  }
 
     canvas {
       display: block;
