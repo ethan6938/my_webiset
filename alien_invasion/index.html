@@ -220,6 +220,16 @@
   }
   ship.setVelocityX(velocityX);
 
+  // Boss movement
+  if (bossActive && boss && boss.active) {
+    boss.x += bossDirection * bossSpeed * (scene.game.loop.delta / 1000);
+    boss.y = 100 + Math.sin(scene.time.now / 500) * 10;
+
+    // Reverse direction at screen edges
+    if (boss.x > 800) bossDirection = -1;
+    else if (boss.x < 100) bossDirection = 1;
+  }
+
   // Alien movement and shooting
   if (aliens && aliens.getChildren().length > 0) {
     let moveX = alienSpeed * alienMoveDirection * (1 / 60);
