@@ -64,32 +64,19 @@
 
   <script>
 
-    // ✅ Define this first
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+     // ✅ Define this first
+     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     if (isTouchDevice && window.innerHeight > window.innerWidth) {
       alert('Please rotate your phone to landscape (horizontal) mode for the best experience.');
     }
-
-
-    // ✅ Responsive game size
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-
-    let gameWidth = 900;
-    let gameHeight = 600;
-
-    if (isTouchDevice) {
-      gameWidth = screenWidth;
-      gameHeight = screenHeight;
-    }
-
+    
     const maxLevel = 5;
 
     const config = {
       type: Phaser.AUTO,
-      width: screenWidth,
-      height: screenHeight,
+      width: 900,
+      height: 600,
       backgroundColor: '#000000',
       physics: {
         default: 'arcade',
