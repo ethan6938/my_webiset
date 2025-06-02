@@ -267,6 +267,26 @@
     }
   }
 
+  // Boss & reinforcement shooting
+  alienShootTimer += scene.game.loop.delta;
+    if (alienShootTimer > (2000 - level * 200)) {
+      alienShootTimer = 0;
+
+      let shooters = aliens.getChildren().filter(a => a.active);
+      if (boss && boss.active) shooters.push(boss);
+
+      let shooter = Phaser.Utils.Array.GetRandom(shooters);
+      if (shooter) {
+        let bullet = alienBullets.get(shooter.x, shooter.y + 20, 'alienBullet');
+        if (bullet) {
+          bullet.setActive(true).setVisible(true);
+          bullet.body.enable = true;
+          bullet.setScale(0.1);
+          bullet.body.velocity.y = 300 + (level * 20);
+        }
+      }
+    }
+
   bullets.children.iterate(b => b && b.y < 0 && b.destroy());
   alienBullets.children.iterate(b => b && b.y > 600 && b.destroy());
 
