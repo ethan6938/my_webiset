@@ -2,73 +2,104 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Racing Game</title>
+  <title>My Phaser Racing Game</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
   <style>
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100%;
+      background: #0c5e03;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
-    #gameCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: url('https://images.pexels.com/photos/192676/pexels-photo-192676.jpeg') no-repeat center center/cover;
-    }
-    #startButton {
-      font-size: 18px;
-      padding: 8px 16px;
-      background-color: #ff5722;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      transition: background-color 0.3s, transform 0.2s;
-      position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-    }
-    #startButton:hover {
-      background-color: #e64a19;
-      transform: scale(1.05);
+    #phaser-example {
+      border: 4px solid #fff;
+      box-shadow: 0 0 20px #0c5e03;
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-  <button id="startButton">Start Race</button>
+  <div id="phaser-example"></div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    class MyGame extends Phaser.Scene {
+      preload() {
+        this.load.setBaseURL('https://cdn.phaserfiles.com/v385');
+        this.load.image('track', 'assets/particles/racetrack-bend.png');
+        this.load.image('car', 'assets/sprites/car-red.png');
+      }
 
-    window.addEventListener('resize', () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    });
+      create() {
+        this.add.image(450, 300, 'track').setScale(0.8);
 
-    document.getElementById('startButton').addEventListener('click', () => {
-      document.getElementById('startButton').style.display = 'none';
-      startGame();
-    });
+        // Add car sprite and enable physics on it
+        this.car = this.physics.add.sprite(450, 500, 'car').setScale(0.5);
+        this.car.setOrigin(0.5, 0.5);
 
-    function startGame() {
-      // You can build actual game logic here.
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#fff';
-      ctx.font = '48px sans-serif';
-      ctx.fillText('Race Started!', canvas.width / 2 - 150, canvas.height / 2);
+        // Keyboard input
+        this.cursors = this.input.keyboard.createCursorKeys();
+
+        // Movement params
+        this.carSpeed = 0;
+        this.maxSpeed = 200;
+        this.acceleration = 300;
+        this.drag = 150;
+        this.turnSpeed = 150;
+      }
+
+      update(time, delta) {
+        const dt = delta / 1000;
+
+        // Accelerate or decelerate
+        if (this.cursors.up.isDown) {
+          this.carSpeed += this.acceleration * dt;
+        } else if (this.cursors.down.isDown) {
+          this.carSpeed -= this.acceleration * dt;
+        } else {
+          // Slow down naturally
+          if (this.carSpeed > 0) {
+            this.carSpeed -= this.drag * dt;
+            if (this.carSpeed < 0) this.carSpeed = 0;
+          } else if (this.carSpeed < 0) {
+            this.carSpeed += this.drag * dt;
+            if (this.carSpeed > 0) this.carSpeed = 0;
+          }
+        }
+
+        // Clamp speed
+        this.carSpeed = Phaser.Math.Clamp(this.carSpeed, -this.maxSpeed / 2, this.maxSpeed);
+
+        // Rotate car left/right only if moving
+        if (this.carSpeed !== 0) {
+          if (this.cursors.left.isDown) {
+            this.car.angle -= this.turnSpeed * dt * (this.carSpeed > 0 ? 1 : -1);
+          }
+          if (this.cursors.right.isDown) {
+            this.car.angle += this.turnSpeed * dt * (this.carSpeed > 0 ? 1 : -1);
+          }
+        }
+
+        // Move car forward based on angle
+        this.physics.velocityFromAngle(this.car.angle - 90, this.carSpeed, this.car.body.velocity);
+
+        // Keep car inside the canvas
+        this.car.x = Phaser.Math.Clamp(this.car.x, 50, 800 - 50);
+        this.car.y = Phaser.Math.Clamp(this.car.y, 50, 600 - 50);
+      }
     }
+
+    const config = {
+      type: Phaser.AUTO,
+      width: 800,
+      height: 600,
+      backgroundColor: '#0c5e03',
+      parent: 'phaser-example',
+      physics: { default: 'arcade' },
+      scene: MyGame,
+    };
+
+    const game = new Phaser.Game(config);
   </script>
 </body>
 </html>
