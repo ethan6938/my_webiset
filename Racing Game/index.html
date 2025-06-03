@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Turbo Drift Racing</title>
+  <title>Super Fast Racer</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
   <style>
     body {
@@ -22,59 +22,53 @@
       max-height: 100vh;
       position: relative;
     }
-    #ui-overlay {
+    #speedometer, #laps-counter, #restart-btn {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      padding: 15px;
-      box-sizing: border-box;
-      display: flex;
-      justify-content: space-between;
-      color: white;
-      z-index: 100;
-      pointer-events: none;
-    }
-    #speedometer, #laps-counter {
       font-family: monospace;
       font-size: 20px;
+      color: white;
       background: rgba(0, 0, 0, 0.4);
       padding: 8px 12px;
       border-radius: 8px;
+      user-select: none;
+      pointer-events: none;
+      z-index: 100;
+    }
+    #speedometer {
+      top: 15px;
+      left: 15px;
+    }
+    #laps-counter {
+      top: 15px;
+      right: 15px;
     }
     #restart-btn {
-      position: absolute;
-      bottom: 20px;
+      bottom: 15px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 18px;
       pointer-events: auto;
       cursor: pointer;
+      user-select: auto;
       padding: 10px 20px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
       border: 2px solid white;
-      border-radius: 10px;
       transition: background 0.3s ease;
-      color: white;
     }
     #restart-btn:hover {
-      background: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.4);
     }
   </style>
 </head>
 <body>
-  <div id="phaser-example">
-    <div id="ui-overlay">
-      <div id="speedometer">Speed: 0 km/h</div>
-      <div id="laps-counter">Laps: 0</div>
-    </div>
-    <button id="restart-btn">Restart</button>
-  </div>
+  <div id="phaser-example"></div>
+  <div id="speedometer">Speed: 0 km/h</div>
+  <div id="laps-counter">Laps: 0</div>
+  <button id="restart-btn">Restart</button>
 
   <script>
-    class TurboDriftGame extends Phaser.Scene {
+    class SuperFastRacer extends Phaser.Scene {
       constructor() {
-        super('TurboDriftGame');
+        super('SuperFastRacer');
       }
 
       preload() {
@@ -87,8 +81,11 @@
       create() {
         this.track = this.add.image(450, 300, 'track').setScale(0.8);
 
-        this.car = this.physics.add.sprite(450, 500, 'car').setScale(0.6).setOrigin(0.5);
-        this.car.setDrag(350).setAngularDrag(400).setMaxVelocity(600);
+        this.car = this.physics.add.sprite(450, 500, 'car').setScale(0.6);
+        this.car.setOrigin(0.5, 0.5);
+        this.car.setDamping(true);
+        this.car.setDrag(0.95);
+        this.car.setMaxVelocity(550);
         this.car.body.collideWorldBounds = true;
 
         this.physics.world.setBounds(50, 50, 700, 500);
@@ -124,29 +121,34 @@
         this.physics.add.overlap(this.car, this.checkpoint, this.handleCheckpoint, null, this);
       }
 
-      update(_, delta) {
+      update(time, delta) {
         const dt = delta / 1000;
         const acceleration = 500;
-        const maxSpeed = 600;
+        const maxSpeed = 550;
         const turnSpeed = 250;
 
         const rad = Phaser.Math.DegToRad(this.car.angle - 90);
         const forward = new Phaser.Math.Vector2(Math.cos(rad), Math.sin(rad));
 
-        if (this.cursors.up.isDown) this.car.body.velocity.add(forward.scale(acceleration * dt));
-        else if (this.cursors.down.isDown) this.car.body.velocity.subtract(forward.scale(acceleration * dt));
-        else this.car.body.velocity.scale(0.95);
+        if (this.cursors.up.isDown) {
+          this.car.body.velocity.add(forward.scale(acceleration * dt));
+        } else if (this.cursors.down.isDown) {
+          this.car.body.velocity.subtract(forward.scale(acceleration * dt));
+        } else {
+          this.car.body.velocity.scale(0.96);
+        }
 
-        if (this.car.body.velocity.length() > maxSpeed)
+        if (this.car.body.velocity.length() > maxSpeed) {
           this.car.body.velocity.setLength(maxSpeed);
+        }
 
-        if (this.car.body.velocity.length() > 30) {
+        if (this.car.body.velocity.length() > 25) {
           const turnAmount = turnSpeed * dt * (this.car.body.velocity.length() / maxSpeed);
           if (this.cursors.left.isDown) this.car.angle -= turnAmount;
           if (this.cursors.right.isDown) this.car.angle += turnAmount;
         }
 
-        if ((this.cursors.left.isDown || this.cursors.right.isDown) && this.car.body.velocity.length() > maxSpeed * 0.5) {
+        if ((this.cursors.left.isDown || this.cursors.right.isDown) && this.car.body.velocity.length() > maxSpeed * 0.4) {
           this.smokeEmitter.start();
         } else {
           this.smokeEmitter.stop();
@@ -161,10 +163,10 @@
       }
 
       handleCheckpoint(car, checkpoint) {
-        if (!this.checkpointPassed && car.body.velocity.length() > 50) {
+        if (!this.checkpointPassed && car.body.velocity.length() > 80) {
           this.laps++;
           this.checkpointPassed = true;
-          this.time.delayedCall(1500, () => this.checkpointPassed = false);
+          this.time.delayedCall(2000, () => this.checkpointPassed = false);
         }
       }
 
@@ -190,7 +192,7 @@
           gravity: { y: 0 }
         }
       },
-      scene: TurboDriftGame,
+      scene: SuperFastRacer,
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
