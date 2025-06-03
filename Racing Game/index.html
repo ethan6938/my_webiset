@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>My Phaser Racing Game</title>
+  <title>Improved Phaser Racing Game</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
   <style>
     body {
@@ -12,80 +12,202 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     #phaser-example {
       border: 4px solid #fff;
-      box-shadow: 0 0 20px #0c5e03;
+      box-shadow: 0 0 25px #0c5e03;
+      max-width: 100vw;
+      max-height: 100vh;
+      position: relative;
+    }
+    #speedometer, #laps-counter, #restart-btn {
+      position: absolute;
+      font-family: monospace;
+      font-size: 20px;
+      color: white;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 12px;
+      border-radius: 8px;
+      user-select: none;
+      pointer-events: none;
+      z-index: 100;
+    }
+    #speedometer {
+      top: 15px;
+      left: 15px;
+    }
+    #laps-counter {
+      top: 15px;
+      right: 15px;
+    }
+    #restart-btn {
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: auto;
+      cursor: pointer;
+      user-select: auto;
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid white;
+      transition: background 0.3s ease;
+    }
+    #restart-btn:hover {
+      background: rgba(255, 255, 255, 0.4);
     }
   </style>
 </head>
 <body>
   <div id="phaser-example"></div>
+  <div id="speedometer">Speed: 0 km/h</div>
+  <div id="laps-counter">Laps: 0</div>
+  <button id="restart-btn">Restart</button>
 
   <script>
-    class MyGame extends Phaser.Scene {
+    class ImprovedGame extends Phaser.Scene {
+      constructor() {
+        super('ImprovedGame');
+      }
+
       preload() {
         this.load.setBaseURL('https://cdn.phaserfiles.com/v385');
         this.load.image('track', 'assets/particles/racetrack-bend.png');
         this.load.image('car', 'assets/sprites/car-red.png');
+        this.load.image('smoke', 'assets/particles/smoke.png');
+        
+        // Optional audio placeholders
+        // this.load.audio('engine', 'path-to-your-engine-sound.mp3');
+        // this.load.audio('music', 'path-to-your-background-music.mp3');
       }
 
       create() {
-        this.add.image(450, 300, 'track').setScale(0.8);
+        // Track image setup
+        this.track = this.add.image(450, 300, 'track').setScale(0.8);
 
-        // Add car sprite and enable physics on it
-        this.car = this.physics.add.sprite(450, 500, 'car').setScale(0.5);
+        // Car setup with physics
+        this.car = this.physics.add.sprite(450, 500, 'car').setScale(0.6);
         this.car.setOrigin(0.5, 0.5);
+        this.car.setDrag(350);
+        this.car.setAngularDrag(400);
+        this.car.setMaxVelocity(400);
+        this.car.body.collideWorldBounds = true;
 
-        // Keyboard input
+        // Define world bounds matching the track
+        this.physics.world.setBounds(50, 50, 700, 500);
+
+        // Input keys
         this.cursors = this.input.keyboard.createCursorKeys();
 
-        // Movement params
-        this.carSpeed = 0;
-        this.maxSpeed = 200;
-        this.acceleration = 300;
-        this.drag = 150;
-        this.turnSpeed = 150;
+        // UI elements
+        this.speedometer = document.getElementById('speedometer');
+        this.lapsCounter = document.getElementById('laps-counter');
+        this.restartBtn = document.getElementById('restart-btn');
+        this.restartBtn.addEventListener('click', () => this.restartRace());
+
+        // Smoke particles setup for drifting effect
+        this.smokeParticles = this.add.particles('smoke');
+        this.smokeEmitter = this.smokeParticles.createEmitter({
+          lifespan: 600,
+          speed: { min: 30, max: 50 },
+          scale: { start: 0.3, end: 0 },
+          alpha: { start: 0.5, end: 0 },
+          quantity: 0,
+          on: false,
+          follow: this.car,
+          followOffset: { x: 0, y: 30 },
+          angle: { min: 160, max: 200 }
+        });
+
+        // Simple lap counter setup
+        this.laps = 0;
+        this.checkpointPassed = false;
+
+        // Add an invisible checkpoint zone to count laps
+        this.checkpoint = this.add.zone(450, 60, 200, 20);
+        this.physics.world.enable(this.checkpoint);
+        this.checkpoint.body.setAllowGravity(false);
+        this.checkpoint.body.moves = false;
+
+        this.physics.add.overlap(this.car, this.checkpoint, this.handleCheckpoint, null, this);
+
+        // Optional: Play background music and engine sounds here if loaded
+        // this.engineSound = this.sound.add('engine');
+        // this.engineSound.play({ loop: true });
       }
 
       update(time, delta) {
         const dt = delta / 1000;
+        const acceleration = 300;
+        const maxSpeed = 400;
+        const turnSpeed = 200;
 
-        // Accelerate or decelerate
+        // Calculate forward vector based on car angle
+        const rad = Phaser.Math.DegToRad(this.car.angle - 90);
+        const forward = new Phaser.Math.Vector2(Math.cos(rad), Math.sin(rad));
+
+        // Accelerate / brake
         if (this.cursors.up.isDown) {
-          this.carSpeed += this.acceleration * dt;
+          this.car.body.velocity.add(forward.scale(acceleration * dt));
         } else if (this.cursors.down.isDown) {
-          this.carSpeed -= this.acceleration * dt;
+          this.car.body.velocity.subtract(forward.scale(acceleration * dt));
         } else {
-          // Slow down naturally
-          if (this.carSpeed > 0) {
-            this.carSpeed -= this.drag * dt;
-            if (this.carSpeed < 0) this.carSpeed = 0;
-          } else if (this.carSpeed < 0) {
-            this.carSpeed += this.drag * dt;
-            if (this.carSpeed > 0) this.carSpeed = 0;
-          }
+          // Natural drag slows car down
+          this.car.body.velocity.scale(0.94);
         }
 
-        // Clamp speed
-        this.carSpeed = Phaser.Math.Clamp(this.carSpeed, -this.maxSpeed / 2, this.maxSpeed);
+        // Clamp max speed
+        if (this.car.body.velocity.length() > maxSpeed) {
+          this.car.body.velocity.setLength(maxSpeed);
+        }
 
-        // Rotate car left/right only if moving
-        if (this.carSpeed !== 0) {
+        // Turning (only effective if car is moving enough)
+        if (this.car.body.velocity.length() > 30) {
+          const turnAmount = turnSpeed * dt * (this.car.body.velocity.length() / maxSpeed);
           if (this.cursors.left.isDown) {
-            this.car.angle -= this.turnSpeed * dt * (this.carSpeed > 0 ? 1 : -1);
+            this.car.angle -= turnAmount;
           }
           if (this.cursors.right.isDown) {
-            this.car.angle += this.turnSpeed * dt * (this.carSpeed > 0 ? 1 : -1);
+            this.car.angle += turnAmount;
           }
         }
 
-        // Move car forward based on angle
-        this.physics.velocityFromAngle(this.car.angle - 90, this.carSpeed, this.car.body.velocity);
+        // Emit smoke when turning sharply at speed (simulate drifting)
+        if ((this.cursors.left.isDown || this.cursors.right.isDown) && this.car.body.velocity.length() > maxSpeed * 0.5) {
+          this.smokeEmitter.start();
+        } else {
+          this.smokeEmitter.stop();
+        }
 
-        // Keep car inside the canvas
-        this.car.x = Phaser.Math.Clamp(this.car.x, 50, 800 - 50);
-        this.car.y = Phaser.Math.Clamp(this.car.y, 50, 600 - 50);
+        // Clamp car position inside world bounds
+        this.car.x = Phaser.Math.Clamp(this.car.x, 50, 750);
+        this.car.y = Phaser.Math.Clamp(this.car.y, 50, 550);
+
+        // Update speedometer (pixels/second to km/h conversion approx)
+        const speedKmh = Math.round(this.car.body.velocity.length() * 3.6);
+        this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
+        this.lapsCounter.textContent = `Laps: ${this.laps}`;
+      }
+
+      handleCheckpoint(car, checkpoint) {
+        if (!this.checkpointPassed && car.body.velocity.length() > 50) {
+          this.laps++;
+          this.checkpointPassed = true;
+
+          // Reset checkpointPassed after a delay to prevent multiple triggers
+          this.time.delayedCall(1500, () => {
+            this.checkpointPassed = false;
+          });
+        }
+      }
+
+      restartRace() {
+        this.laps = 0;
+        this.car.setPosition(450, 500);
+        this.car.setVelocity(0, 0);
+        this.car.setAngle(0);
+        this.checkpointPassed = false;
       }
     }
 
@@ -95,8 +217,18 @@
       height: 600,
       backgroundColor: '#0c5e03',
       parent: 'phaser-example',
-      physics: { default: 'arcade' },
-      scene: MyGame,
+      physics: {
+        default: 'arcade',
+        arcade: {
+          debug: false,
+          gravity: { y: 0 }
+        }
+      },
+      scene: ImprovedGame,
+      scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+      }
     };
 
     const game = new Phaser.Game(config);
