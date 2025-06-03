@@ -3,12 +3,20 @@ class PreloadScene extends Phaser.Scene {
       super('PreloadScene');
     }
     preload() {
-      // Load images (replace URLs or use your own assets)
-      this.load.image('car1', 'https://i.imgur.com/0Zf9XOR.png'); // example car
-      this.load.image('car2', 'https://i.imgur.com/WbMOfMl.png'); // example car
-      this.load.image('track1', 'https://i.imgur.com/fI6hQjG.jpg'); // example track
-      this.load.image('track2', 'https://i.imgur.com/yNDrLtC.jpg'); // example track
-      this.load.image('trophy', 'https://i.imgur.com/2iG3Bq0.png'); // trophy
+      // Load car images - Using placeholders or free assets
+      this.load.image('ferrari', 'https://i.imgur.com/0Zf9XOR.png');
+      this.load.image('lamborghini', 'https://i.imgur.com/WbMOfMl.png');
+      this.load.image('porsche', 'https://i.imgur.com/O3uT5Mz.png');
+      this.load.image('bugatti', 'https://i.imgur.com/QdMzi0L.png');
+      this.load.image('tesla', 'https://i.imgur.com/bXRXdlx.png');
+  
+      // Load track images
+      this.load.image('desert', 'https://i.imgur.com/fI6hQjG.jpg');
+      this.load.image('city', 'https://i.imgur.com/yNDrLtC.jpg');
+      this.load.image('mountain', 'https://i.imgur.com/jbZ8rAk.jpg');
+  
+      // Trophy image
+      this.load.image('trophy', 'https://i.imgur.com/2iG3Bq0.png');
     }
     create() {
       this.scene.start('MenuScene');
@@ -21,13 +29,17 @@ class PreloadScene extends Phaser.Scene {
     }
     create() {
       this.cars = [
-        { key: 'car1', name: 'Speedster', speed: 200, handling: 150 },
-        { key: 'car2', name: 'Thunderbolt', speed: 180, handling: 180 },
+        { key: 'ferrari', name: 'Ferrari F8', speed: 320, handling: 300 },
+        { key: 'lamborghini', name: 'Lamborghini Huracán', speed: 325, handling: 280 },
+        { key: 'porsche', name: 'Porsche 911 GT3', speed: 310, handling: 320 },
+        { key: 'bugatti', name: 'Bugatti Chiron', speed: 420, handling: 260 },
+        { key: 'tesla', name: 'Tesla Model S Plaid', speed: 300, handling: 340 },
       ];
   
       this.tracks = [
-        { key: 'track1', name: 'Desert Dash' },
-        { key: 'track2', name: 'City Sprint' },
+        { key: 'desert', name: 'Desert Rally' },
+        { key: 'city', name: 'City Circuit' },
+        { key: 'mountain', name: 'Mountain Pass' },
       ];
   
       this.difficulties = ['Easy', 'Medium', 'Hard'];
@@ -38,69 +50,125 @@ class PreloadScene extends Phaser.Scene {
       this.selectedDifficulty = 1; // Medium default
       this.selectedPlayerCount = 3; // 3 AI opponents default
   
-      this.add.text(320, 30, 'RACING GAME', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
+      // Background overlay box
+      this.add.rectangle(400, 300, 780, 580, 0x000000, 0.6).setStrokeStyle(2, 0xffffff);
+  
+      // Title
+      this.add.text(400, 40, '🏁 Ultimate Racing', { fontSize: '42px', fill: '#ffd700', fontStyle: 'bold' }).setOrigin(0.5);
   
       // --- Car Selection ---
-      this.add.text(50, 80, 'Select Your Car:', { fontSize: '20px', fill: '#fff' });
+      this.add.text(100, 100, 'Select Your Car:', { fontSize: '24px', fill: '#ffffff', fontWeight: '600' });
       this.carTexts = [];
-      this.cars.forEach((car, i) => {
-        let txt = this.add.text(60, 110 + i * 40, `${car.name} (Speed: ${car.speed}, Handling: ${car.handling})`, {
-          fontSize: '18px',
-          fill: i === this.selectedCar ? '#ff0' : '#0f0',
-        }).setInteractive().on('pointerdown', () => {
-          this.selectCar(i);
-        });
-        this.carTexts.push(txt);
+      this.carPreviews = [];
   
-        // Add car preview sprite next to text
-        this.add.image(250, 120 + i * 40, car.key).setScale(0.5);
+      this.cars.forEach((car, i) => {
+        let y = 140 + i * 80;
+  
+        // Car preview image
+        let carImg = this.add.image(80, y + 20, car.key).setScale(0.6).setOrigin(0, 0.5);
+        this.carPreviews.push(carImg);
+  
+        // Car name + stats
+        let txt = this.add.text(160, y, `${car.name}\nSpeed: ${car.speed} km/h\nHandling: ${car.handling}`, {
+          fontSize: '18px',
+          fill: i === this.selectedCar ? '#ffd700' : '#a0ffa0',
+          fontStyle: 'italic',
+          lineSpacing: 6,
+        }).setInteractive({ useHandCursor: true });
+  
+        txt.on('pointerover', () => txt.setStyle({ fill: '#ffff00' }));
+        txt.on('pointerout', () => txt.setStyle({ fill: i === this.selectedCar ? '#ffd700' : '#a0ffa0' }));
+        txt.on('pointerdown', () => this.selectCar(i));
+  
+        this.carTexts.push(txt);
       });
   
       // --- Track Selection ---
-      this.add.text(400, 80, 'Select Track:', { fontSize: '20px', fill: '#fff' });
+      this.add.text(520, 100, 'Select Track:', { fontSize: '24px', fill: '#ffffff', fontWeight: '600' });
       this.trackTexts = [];
-      this.tracks.forEach((track, i) => {
-        let txt = this.add.text(410, 110 + i * 40, track.name, {
-          fontSize: '18px',
-          fill: i === this.selectedTrack ? '#ff0' : '#0f0',
-        }).setInteractive().on('pointerdown', () => {
-          this.selectTrack(i);
-        });
-        this.trackTexts.push(txt);
+      this.trackPreviews = [];
   
-        // Track preview image
-        this.add.image(600, 120 + i * 40, track.key).setScale(0.3);
+      this.tracks.forEach((track, i) => {
+        let y = 140 + i * 130;
+  
+        // Track preview image bigger
+        let trackImg = this.add.image(600, y + 40, track.key).setScale(0.45).setOrigin(0.5);
+        this.trackPreviews.push(trackImg);
+  
+        let txt = this.add.text(530, y + 100, track.name, {
+          fontSize: '22px',
+          fill: i === this.selectedTrack ? '#ffd700' : '#a0ffa0',
+          fontWeight: '600',
+        }).setInteractive({ useHandCursor: true });
+  
+        txt.on('pointerover', () => txt.setStyle({ fill: '#ffff00' }));
+        txt.on('pointerout', () => txt.setStyle({ fill: i === this.selectedTrack ? '#ffd700' : '#a0ffa0' }));
+        txt.on('pointerdown', () => this.selectTrack(i));
+  
+        this.trackTexts.push(txt);
       });
   
       // --- Difficulty Selection ---
-      this.add.text(50, 220, 'Select Difficulty:', { fontSize: '20px', fill: '#fff' });
+      this.add.text(100, 560, 'Select Difficulty:', { fontSize: '24px', fill: '#ffffff', fontWeight: '600' });
       this.difficultyTexts = [];
       this.difficulties.forEach((diff, i) => {
-        let txt = this.add.text(60, 250 + i * 30, diff, {
-          fontSize: '18px',
-          fill: i === this.selectedDifficulty ? '#ff0' : '#0f0',
-        }).setInteractive().on('pointerdown', () => {
-          this.selectDifficulty(i);
-        });
+        let txt = this.add.text(130 + i * 140, 600, diff, {
+          fontSize: '22px',
+          fill: i === this.selectedDifficulty ? '#ffd700' : '#a0ffa0',
+          fontWeight: '700',
+          backgroundColor: i === this.selectedDifficulty ? '#222222' : 'transparent',
+          padding: { x: 20, y: 10 },
+          align: 'center',
+        }).setInteractive({ useHandCursor: true });
+  
+        txt.on('pointerover', () => txt.setStyle({ fill: '#ffff00', backgroundColor: '#333333' }));
+        txt.on('pointerout', () => txt.setStyle({
+          fill: i === this.selectedDifficulty ? '#ffd700' : '#a0ffa0',
+          backgroundColor: i === this.selectedDifficulty ? '#222222' : 'transparent'
+        }));
+        txt.on('pointerdown', () => this.selectDifficulty(i));
+  
         this.difficultyTexts.push(txt);
       });
   
       // --- Number of AI Players ---
-      this.add.text(400, 220, 'Number of AI Opponents:', { fontSize: '20px', fill: '#fff' });
-      this.playerCountText = this.add.text(410, 250, this.selectedPlayerCount.toString(), {
-        fontSize: '18px',
-        fill: '#0f0'
-      }).setInteractive().on('pointerdown', () => {
+      this.add.text(520, 560, 'AI Opponents:', { fontSize: '24px', fill: '#ffffff', fontWeight: '600' });
+      this.playerCountText = this.add.text(680, 600, this.selectedPlayerCount.toString(), {
+        fontSize: '28px',
+        fill: '#00ff00',
+        fontWeight: '700',
+        backgroundColor: '#222222',
+        padding: { x: 30, y: 10 },
+        align: 'center',
+        cursor: 'pointer',
+      }).setInteractive({ useHandCursor: true });
+  
+      this.playerCountText.on('pointerdown', () => {
         this.selectedPlayerCount++;
         if (this.selectedPlayerCount > this.maxPlayers) this.selectedPlayerCount = 1;
         this.playerCountText.setText(this.selectedPlayerCount.toString());
       });
   
+      this.playerCountText.on('pointerover', () => this.playerCountText.setStyle({ fill: '#a0ff00' }));
+      this.playerCountText.on('pointerout', () => this.playerCountText.setStyle({ fill: '#00ff00' }));
+  
       // --- Start Button ---
-      this.startText = this.add.text(320, 550, 'START RACE', {
-        fontSize: '28px',
-        fill: '#ff0'
-      }).setOrigin(0.5).setInteractive().on('pointerdown', () => {
+      this.startText = this.add.text(400, 670, 'START RACE', {
+        fontSize: '40px',
+        fill: '#ffd700',
+        fontWeight: 'bold',
+        backgroundColor: '#111111',
+        padding: { x: 40, y: 20 },
+        align: 'center',
+        stroke: '#000000',
+        strokeThickness: 6,
+        shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 5, stroke: true, fill: true }
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+  
+      this.startText.on('pointerover', () => this.startText.setStyle({ fill: '#ffff00' }));
+      this.startText.on('pointerout', () => this.startText.setStyle({ fill: '#ffd700' }));
+  
+      this.startText.on('pointerdown', () => {
         this.scene.start('RaceScene', {
           carIndex: this.selectedCar,
           trackIndex: this.selectedTrack,
@@ -112,17 +180,29 @@ class PreloadScene extends Phaser.Scene {
   
     selectCar(index) {
       this.selectedCar = index;
-      this.carTexts.forEach((txt, i) => txt.setFill(i === index ? '#ff0' : '#0f0'));
+      this.carTexts.forEach((txt, i) => {
+        txt.setFill(i === index ? '#ffd700' : '#a0ffa0');
+      });
     }
   
     selectTrack(index) {
       this.selectedTrack = index;
-      this.trackTexts.forEach((txt, i) => txt.setFill(i === index ? '#ff0' : '#0f0'));
+      this.trackTexts.forEach((txt, i) => {
+        txt.setFill(i === index ? '#ffd700' : '#a0ffa0');
+      });
     }
   
     selectDifficulty(index) {
       this.selectedDifficulty = index;
-      this.difficultyTexts.forEach((txt, i) => txt.setFill(i === index ? '#ff0' : '#0f0'));
+      this.difficultyTexts.forEach((txt, i) => {
+        if(i === index) {
+          txt.setFill('#ffd700');
+          txt.setBackgroundColor('#222222');
+        } else {
+          txt.setFill('#a0ffa0');
+          txt.setBackgroundColor('transparent');
+        }
+      });
     }
   }
   
@@ -137,51 +217,47 @@ class PreloadScene extends Phaser.Scene {
       this.playerCount = data.playerCount;
     }
     create() {
-      // Show basic info
-      this.add.text(400, 20, 'Race Starting...', { fontSize: '24px', fill: '#fff' }).setOrigin(0.5);
+      // Background track image fullscreen with dark overlay
+      this.add.image(400, 300, ['desert','city','mountain'][this.trackIndex]).setDisplaySize(800, 600);
   
-      // Display chosen track
-      this.add.image(400, 300, ['track1','track2'][this.trackIndex]).setScale(0.7);
+      const overlay = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.35);
   
-      // Display player car
-      this.playerCar = this.add.sprite(400, 500, ['car1', 'car2'][this.carIndex]).setScale(0.7);
+      // Display player's car bigger in bottom-left
+      this.playerCar = this.add.image(120, 520, ['ferrari','lamborghini','porsche','bugatti','tesla'][this.carIndex]).setScale(1.2);
   
-      this.lapsTotal = 3;
-      this.currentLap = 1;
-      this.lapText = this.add.text(10, 10, `Lap: ${this.currentLap} / ${this.lapsTotal}`, { fontSize: '18px', fill: '#fff' });
-  
-      // Placeholder for player controls (arrow keys)
-      this.cursors = this.input.keyboard.createCursorKeys();
-  
-      // Placeholder AI cars count display
-      this.add.text(600, 10, `AI Opponents: ${this.playerCount}`, { fontSize: '18px', fill: '#fff' });
-  
-      // Simple race timer and end condition (simulate lap completion)
-      this.lapTimer = this.time.addEvent({
-        delay: 5000, // 5 seconds per lap for demo
-        callback: this.nextLap,
-        callbackScope: this,
-        loop: true,
+      // Lap & info text
+      this.lap = 1;
+      this.totalLaps = 3;
+      this.lapText = this.add.text(650, 40, `Lap: ${this.lap} / ${this.totalLaps}`, {
+        fontSize: '28px',
+        fill: '#ffff00',
+        fontWeight: '700',
+        stroke: '#000',
+        strokeThickness: 4,
+        shadow: { offsetX: 1, offsetY: 1, color: '#000', blur: 2, stroke: true, fill: true }
       });
-    }
   
-    nextLap() {
-      this.currentLap++;
-      if (this.currentLap > this.lapsTotal) {
-        this.lapTimer.remove();
-        this.scene.start('VictoryScene', { winner: 'You' });
-      } else {
-        this.lapText.setText(`Lap: ${this.currentLap} / ${this.lapsTotal}`);
-      }
-    }
+      this.infoText = this.add.text(20, 20,
+        `Track: ${['Desert Rally', 'City Circuit', 'Mountain Pass'][this.trackIndex]}\n` +
+        `Difficulty: ${['Easy', 'Medium', 'Hard'][this.difficulty]}\n` +
+        `AI Opponents: ${this.playerCount}`,
+        { fontSize: '18px', fill: '#ffffff', lineSpacing: 5 }
+      );
   
-    update() {
-      // Basic left/right movement
-      if (this.cursors.left.isDown) {
-        this.playerCar.x -= 5;
-      } else if (this.cursors.right.isDown) {
-        this.playerCar.x += 5;
-      }
+      // Controls hint
+      this.controlsText = this.add.text(400, 570, 'Press SPACE to advance laps', {
+        fontSize: '22px', fill: '#fff', fontStyle: 'italic'
+      }).setOrigin(0.5);
+  
+      // Advance lap on space
+      this.input.keyboard.on('keydown-SPACE', () => {
+        this.lap++;
+        if(this.lap > this.totalLaps) {
+          this.scene.start('VictoryScene', { carIndex: this.carIndex });
+        } else {
+          this.lapText.setText(`Lap: ${this.lap} / ${this.totalLaps}`);
+        }
+      });
     }
   }
   
@@ -190,24 +266,43 @@ class PreloadScene extends Phaser.Scene {
       super('VictoryScene');
     }
     init(data) {
-      this.winner = data.winner || 'Player';
+      this.carIndex = data.carIndex;
     }
     create() {
-      this.add.text(400, 200, `${this.winner} Wins!`, { fontSize: '48px', fill: '#ff0' }).setOrigin(0.5);
+      this.cameras.main.setBackgroundColor('#000000');
   
-      // Show trophy image with simple tween scale animation
-      const trophy = this.add.image(400, 350, 'trophy').setScale(0);
+      this.add.text(400, 150, '🏆 Race Winner! 🏆', {
+        fontSize: '48px',
+        fill: '#ffd700',
+        fontWeight: 'bold',
+        stroke: '#000',
+        strokeThickness: 6
+      }).setOrigin(0.5);
+  
+      // Trophy with animation
+      this.trophy = this.add.image(400, 350, 'trophy').setScale(0.7);
       this.tweens.add({
-        targets: trophy,
-        scale: 1,
-        duration: 2000,
-        ease: 'Bounce.easeOut'
+        targets: this.trophy,
+        y: 310,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
       });
   
-      // Restart instruction
-      this.add.text(400, 500, 'Click anywhere to restart', { fontSize: '20px', fill: '#fff' }).setOrigin(0.5);
+      // Show winner car below trophy
+      this.winnerCar = this.add.image(400, 480, ['ferrari','lamborghini','porsche','bugatti','tesla'][this.carIndex]).setScale(1.2);
   
-      this.input.once('pointerdown', () => {
+      this.add.text(400, 540, 'Press R to Restart', {
+        fontSize: '24px',
+        fill: '#00ff00',
+        fontStyle: 'bold',
+        stroke: '#000',
+        strokeThickness: 3,
+      }).setOrigin(0.5);
+  
+      // Restart game on R
+      this.input.keyboard.on('keydown-R', () => {
         this.scene.start('MenuScene');
       });
     }
@@ -217,13 +312,9 @@ class PreloadScene extends Phaser.Scene {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
-    backgroundColor: '#222',
     parent: 'game-container',
-    physics: {
-      default: 'arcade',
-      arcade: { debug: false }
-    },
-    scene: [PreloadScene, MenuScene, RaceScene, VictoryScene]
+    scene: [PreloadScene, MenuScene, RaceScene, VictoryScene],
+    backgroundColor: '#000000',
   };
   
   const game = new Phaser.Game(config);
