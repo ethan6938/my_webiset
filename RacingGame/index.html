@@ -77,8 +77,10 @@
       }
 
       create() {
+        // Add the track background
         this.track = this.add.image(450, 300, 'track').setScale(0.8);
 
+        // Add the car sprite with physics
         this.car = this.physics.add.sprite(450, 500, 'car').setScale(0.6);
         this.car.setOrigin(0.5, 0.5);
         this.car.setDamping(true);
@@ -86,31 +88,37 @@
         this.car.setMaxVelocity(550);
         this.car.body.collideWorldBounds = true;
 
+        // Set world bounds - track area
         this.physics.world.setBounds(50, 50, 700, 500);
 
+        // Create invisible walls around the track edges to keep car inside
+        this.walls = this.physics.add.staticGroup();
+
+        // Left wall
+        this.walls.create(50, 300, null).setSize(10, 500).setVisible(false).refreshBody();
+        // Right wall
+        this.walls.create(750, 300, null).setSize(10, 500).setVisible(false).refreshBody();
+        // Top wall
+        this.walls.create(400, 50, null).setSize(700, 10).setVisible(false).refreshBody();
+        // Bottom wall
+        this.walls.create(400, 550, null).setSize(700, 10).setVisible(false).refreshBody();
+
+        // Add collision between car and walls
+        this.physics.add.collider(this.car, this.walls);
+
+        // Keyboard input
         this.cursors = this.input.keyboard.createCursorKeys();
 
+        // UI elements
         this.speedometer = document.getElementById('speedometer');
         this.lapsCounter = document.getElementById('laps-counter');
         this.restartBtn = document.getElementById('restart-btn');
         this.restartBtn.addEventListener('click', () => this.restartRace());
 
-        this.smokeParticles = this.add.particles('smoke');
-        this.smokeEmitter = this.smokeParticles.createEmitter({
-          lifespan: 500,
-          speed: { min: 100, max: 150 },
-          scale: { start: 0.4, end: 0 },
-          alpha: { start: 0.6, end: 0 },
-          quantity: 0,
-          on: false,
-          follow: this.car,
-          followOffset: { x: 0, y: 30 },
-          angle: { min: 150, max: 210 }
-        });
-
         this.laps = 0;
         this.checkpointPassed = false;
 
+        // Checkpoint for laps
         this.checkpoint = this.add.zone(450, 60, 200, 20);
         this.physics.world.enable(this.checkpoint);
         this.checkpoint.body.setAllowGravity(false);
@@ -125,6 +133,7 @@
         const maxSpeed = 550;
         const turnSpeed = 250;
 
+        // Calculate forward vector based on current car angle
         const rad = Phaser.Math.DegToRad(this.car.angle - 90);
         const forward = new Phaser.Math.Vector2(Math.cos(rad), Math.sin(rad));
 
@@ -144,12 +153,6 @@
           const turnAmount = turnSpeed * dt * (this.car.body.velocity.length() / maxSpeed);
           if (this.cursors.left.isDown) this.car.angle -= turnAmount;
           if (this.cursors.right.isDown) this.car.angle += turnAmount;
-        }
-
-        if ((this.cursors.left.isDown || this.cursors.right.isDown) && this.car.body.velocity.length() > maxSpeed * 0.4) {
-          this.smokeEmitter.start();
-        } else {
-          this.smokeEmitter.stop();
         }
 
         this.car.x = Phaser.Math.Clamp(this.car.x, 50, 750);
