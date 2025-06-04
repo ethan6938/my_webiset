@@ -22,7 +22,7 @@
       max-height: 100vh;
       position: relative;
     }
-    #speedometer, #restart-btn, #winner-banner {
+    #speedometer, #restart-btn {
       position: absolute;
       font-family: monospace;
       font-size: 20px;
@@ -31,6 +31,7 @@
       padding: 8px 12px;
       border-radius: 8px;
       user-select: none;
+      pointer-events: none;
       z-index: 100;
     }
     #speedometer {
@@ -43,6 +44,7 @@
       transform: translateX(-50%);
       pointer-events: auto;
       cursor: pointer;
+      user-select: auto;
       padding: 10px 20px;
       background: rgba(255, 255, 255, 0.15);
       border: 2px solid white;
@@ -51,20 +53,11 @@
     #restart-btn:hover {
       background: rgba(255, 255, 255, 0.4);
     }
-    #winner-banner {
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 28px;
-      display: none;
-      background: rgba(0, 0, 0, 0.8);
-    }
   </style>
 </head>
 <body>
   <div id="phaser-example"></div>
   <div id="speedometer">Speed: 0 km/h</div>
-  <div id="winner-banner">You Win!</div>
   <button id="restart-btn">Restart</button>
 
   <script>
@@ -80,83 +73,69 @@
       }
 
       create() {
+        // Track background, centered, scaled
         this.add.image(400, 300, 'track').setScale(0.8);
-        this.speedometer = document.getElementById('speedometer');
-        this.restartBtn = document.getElementById('restart-btn');
-        this.winnerBanner = document.getElementById('winner-banner');
 
-        this.car = this.physics.add.sprite(300, 500, 'car').setScale(0.15);
-        this.opponent = this.physics.add.sprite(500, 500, 'opponent').setScale(0.15);
-        this.car.setMaxVelocity(600);
-        this.opponent.setMaxVelocity(600);
+        // Player car, origin center for smooth rotation
+        this.car = this.physics.add.sprite(400, 500, 'car').setScale(0.15);
+        this.car.setOrigin(0.5, 0.5);
+        this.car.setAngle(-90);  // face straight up
+
+        // Opponent car positioned right side, also facing up
+        this.opponent = this.physics.add.sprite(450, 500, 'opponent').setScale(0.15);
+        this.opponent.setOrigin(0.5, 0.5);
+        this.opponent.setAngle(-90);
+
+        // Set world boundaries and keep cars inside
+        this.physics.world.setBounds(0, 0, 800, 600);
         this.car.setCollideWorldBounds(true);
         this.opponent.setCollideWorldBounds(true);
 
-        this.physics.world.setBounds(0, 0, 800, 600);
+        // Controls - just W key for acceleration
+        this.keys = this.input.keyboard.addKeys('W');
 
+        // Speedometer and restart button setup
+        this.speedometer = document.getElementById('speedometer');
+        this.restartBtn = document.getElementById('restart-btn');
+        this.restartBtn.addEventListener('click', () => this.restartRace());
+
+        this.finished = false;
+
+        // Finish line zone near the top
         this.finishLine = this.add.zone(400, 100, 800, 10);
         this.physics.world.enable(this.finishLine);
         this.finishLine.body.setAllowGravity(false);
         this.finishLine.body.moves = false;
 
+        // Overlap checks for win conditions
         this.physics.add.overlap(this.car, this.finishLine, this.playerWins, null, this);
         this.physics.add.overlap(this.opponent, this.finishLine, this.opponentWins, null, this);
-
-        this.keys = this.input.keyboard.addKeys('W');
-        this.finished = false;
-        this.raceStarted = false;
-
-        this.restartBtn.addEventListener('click', () => this.restartRace());
-
-        this.countdownText = this.add.text(400, 300, '', {
-          fontSize: '64px',
-          color: '#fff'
-        }).setOrigin(0.5);
-
-        this.startCountdown();
-      }
-
-      startCountdown() {
-        let countdown = ['3', '2', '1', 'GO!'];
-        let index = 0;
-
-        this.time.addEvent({
-          delay: 1000,
-          repeat: countdown.length - 1,
-          callback: () => {
-            this.countdownText.setText(countdown[index]);
-            if (countdown[index] === 'GO!') {
-              this.raceStarted = true;
-              this.countdownText.setText('');
-              this.opponentStartDelay = Phaser.Math.Between(300, 1000);
-              this.time.delayedCall(this.opponentStartDelay, () => {
-                this.opponent.setAccelerationY(-600);
-              });
-            }
-            index++;
-          }
-        });
       }
 
       update(time, delta) {
+        if (this.finished) return;
+
         const dt = delta / 1000;
         const acceleration = 800;
         const maxSpeed = 600;
 
-        if (this.raceStarted && !this.finished) {
-          if (this.keys.W.isDown) {
-            this.car.setAccelerationY(-acceleration);
-          } else {
-            this.car.setAccelerationY(0);
-            this.car.setDragY(400);
-          }
-
-          if (this.opponent.body.velocity.y < -maxSpeed) {
-            this.opponent.setVelocityY(-maxSpeed);
-            this.opponent.setAccelerationY(0);
-          }
+        // Player car acceleration control
+        if (this.keys.W.isDown) {
+          this.car.setAccelerationY(-acceleration);
+        } else {
+          this.car.setAccelerationY(0);
+          this.car.setDragY(400);
         }
 
+        // Opponent AI acceleration up to max speed
+        if (this.opponent.body.velocity.y > -maxSpeed) {
+          this.opponent.setAccelerationY(-600);
+        } else {
+          this.opponent.setAccelerationY(0);
+          this.opponent.setVelocityY(-maxSpeed);
+        }
+
+        // Update speedometer with absolute vertical speed in km/h
         const speedKmh = Math.round(Math.abs(this.car.body.velocity.y) * 3.6);
         this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
       }
@@ -164,33 +143,28 @@
       playerWins() {
         if (!this.finished) {
           this.finished = true;
-          this.showWinner("You Win!");
+          alert('You Win!');
         }
       }
 
       opponentWins() {
         if (!this.finished) {
           this.finished = true;
-          this.showWinner("Opponent Wins!");
+          alert('Opponent Wins!');
         }
-      }
-
-      showWinner(text) {
-        this.winnerBanner.textContent = text;
-        this.winnerBanner.style.display = 'block';
       }
 
       restartRace() {
         this.finished = false;
-        this.raceStarted = false;
-        this.winnerBanner.style.display = 'none';
-        this.car.setPosition(300, 500);
-        this.opponent.setPosition(500, 500);
+        this.car.setPosition(400, 500);
         this.car.setVelocity(0);
+        this.car.setAcceleration(0);
+        this.car.setAngle(-90);
+
+        this.opponent.setPosition(450, 500);
         this.opponent.setVelocity(0);
-        this.car.setAccelerationY(0);
-        this.opponent.setAccelerationY(0);
-        this.startCountdown();
+        this.opponent.setAcceleration(0);
+        this.opponent.setAngle(-90);
       }
     }
 
