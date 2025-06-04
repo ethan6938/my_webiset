@@ -64,7 +64,7 @@
         const bg = this.add.image(0, 0, 'track').setOrigin(0);
         bg.setDisplaySize(this.scale.width, this.scale.height);
 
-        this.car = this.physics.add.sprite(600, 600, 'car').setScale(0.15).setAngle(0);
+        this.car = this.physics.add.sprite(700, 700, 'car').setScale(0.15).setAngle(0);
         this.opponent = this.physics.add.sprite(500, 500, 'opponent').setScale(0.15).setAngle(0);
 
         this.car.setCollideWorldBounds(true);
@@ -127,7 +127,7 @@
 
       restartRace() {
         this.finished = false;
-        this.car.setPosition(600, 600);
+        this.car.setPosition(700, 700);
         this.opponent.setPosition(500, 500);
         this.car.setVelocity(0);
         this.opponent.setVelocity(0);
