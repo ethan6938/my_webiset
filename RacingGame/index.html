@@ -113,7 +113,7 @@
   </div>
 
   <script>
-    let selectedTrack = 'easy';
+    let selectedTrack = 'track';
     let selectedCar = 'car';
 
     document.querySelectorAll('#track-choices img').forEach(img => {
@@ -144,8 +144,8 @@
     });
 
     function getTrackLength() {
-      if (selectedTrack === 'medium') return 500;
-      if (selectedTrack === 'hard') return 1000;
+      if (selectedTrack === 'track2') return 500;
+      if (selectedTrack === 'track3') return 1000;
       return 100;
     }
 
