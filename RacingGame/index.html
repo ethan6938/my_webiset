@@ -94,8 +94,6 @@
         this.walls.create(400, 550, null).setSize(700, 10).setVisible(false).refreshBody();
         this.physics.add.collider(this.car, this.walls);
 
-        this.wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-
         this.speedometer = document.getElementById('speedometer');
         this.lapsCounter = document.getElementById('laps-counter');
         this.restartBtn = document.getElementById('restart-btn');
@@ -109,57 +107,48 @@
         this.checkpoint.body.setAllowGravity(false);
         this.checkpoint.body.moves = false;
         this.physics.add.overlap(this.car, this.checkpoint, this.handleCheckpoint, null, this);
+
+        this.keys = this.input.keyboard.addKeys('W,S,A,D');
       }
 
       update(time, delta) {
-  const dt = delta / 1000;
-  const acceleration = 300;
-  const maxSpeed = 400;
-  const turnSpeed = 150; // degrees per second
+        const dt = delta / 1000;
+        const maxSpeed = 400;
+        const acceleration = 500;
+        const reverseAccel = 250;
+        const turnSpeed = 180;
+        const drag = 0.98;
 
-  // Get custom keys
-  const keyW = this.input.keyboard.addKey('W');
-  const keyS = this.input.keyboard.addKey('S');
-  const keyA = this.input.keyboard.addKey('A');
-  const keyD = this.input.keyboard.addKey('D');
+        const { W, S, A, D } = this.keys;
 
-  // Rotation control
-  if (keyA.isDown) {
-    this.car.angle -= turnSpeed * dt;
-  }
-  if (keyD.isDown) {
-    this.car.angle += turnSpeed * dt;
-  }
+        const rad = Phaser.Math.DegToRad(this.car.angle - 90);
+        const forward = new Phaser.Math.Vector2(Math.cos(rad), Math.sin(rad));
 
-  // Forward vector based on current rotation
-  const rad = Phaser.Math.DegToRad(this.car.angle - 90);
-  const forward = new Phaser.Math.Vector2(Math.cos(rad), Math.sin(rad));
+        if (this.car.body.velocity.length() > 5) {
+          const turnAmount = turnSpeed * dt * (this.car.body.velocity.length() / maxSpeed);
+          if (A.isDown) this.car.angle -= turnAmount;
+          if (D.isDown) this.car.angle += turnAmount;
+        }
 
-  // Forward/backward movement
-  if (keyW.isDown) {
-    this.car.body.velocity.add(forward.scale(acceleration * dt));
-  } else if (keyS.isDown) {
-    this.car.body.velocity.subtract(forward.scale(acceleration * dt));
-  } else {
-    this.car.body.velocity.scale(0.96); // Apply drag
-  }
+        if (W.isDown) {
+          this.car.body.velocity.add(forward.clone().scale(acceleration * dt));
+        } else if (S.isDown) {
+          this.car.body.velocity.subtract(forward.clone().scale(reverseAccel * dt));
+        }
 
-  // Clamp max speed
-  if (this.car.body.velocity.length() > maxSpeed) {
-    this.car.body.velocity.setLength(maxSpeed);
-  }
+        this.car.body.velocity.scale(drag);
 
-  // Keep car within world bounds
-  this.car.x = Phaser.Math.Clamp(this.car.x, 50, 750);
-  this.car.y = Phaser.Math.Clamp(this.car.y, 50, 550);
+        if (this.car.body.velocity.length() > maxSpeed) {
+          this.car.body.velocity.setLength(maxSpeed);
+        }
 
-  // Update speedometer and laps
-  const speedKmh = Math.round(this.car.body.velocity.length() * 3.6);
-  this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
-  this.lapsCounter.textContent = `Laps: ${this.laps}`;
-}
+        this.car.x = Phaser.Math.Clamp(this.car.x, 50, 750);
+        this.car.y = Phaser.Math.Clamp(this.car.y, 50, 550);
 
-
+        const speedKmh = Math.round(this.car.body.velocity.length() * 3.6);
+        this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
+        this.lapsCounter.textContent = `Laps: ${this.laps}`;
+      }
 
       handleCheckpoint(car, checkpoint) {
         if (!this.checkpointPassed && car.body.velocity.length() > 80) {
