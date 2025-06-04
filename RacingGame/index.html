@@ -21,6 +21,7 @@
       justify-content: center;
       align-items: center;
       gap: 20px;
+      z-index: 2;
     }
     .section {
       display: flex;
@@ -51,15 +52,17 @@
     #phaser-example {
       display: none;
     }
+
     #hud {
       position: absolute;
       top: 15px;
       left: 15px;
-      z-index: 10;
+      z-index: 3;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
+
     .hud-btn {
       font-family: monospace;
       font-size: 16px;
@@ -70,6 +73,7 @@
       border-radius: 8px;
       cursor: pointer;
     }
+
     #speedometer {
       font-family: monospace;
       font-size: 20px;
@@ -81,30 +85,27 @@
   </style>
 </head>
 <body>
-  <!-- Menu -->
   <div id="menu">
     <div class="section">
       <h2>Select Track</h2>
       <div class="choices" id="track-choices">
-        <img src="images/track.png" data-value="easy" class="selected">
-        <img src="images/track2.png" data-value="medium">
-        <img src="images/track3.png" data-value="hard">
+        <img src="images/track.png" data-value="track">
+        <img src="images/track2.png" data-value="track2">
+        <img src="images/track3.png" data-value="track3">
       </div>
     </div>
     <div class="section">
       <h2>Select Car</h2>
       <div class="choices" id="car-choices">
-        <img src="images/car.png" data-value="car" class="selected">
+        <img src="images/car.png" data-value="car">
         <img src="images/car2.png" data-value="car2">
       </div>
     </div>
     <button id="start-btn">Start Race</button>
   </div>
 
-  <!-- Game Canvas -->
   <div id="phaser-example"></div>
 
-  <!-- HUD -->
   <div id="hud" style="display: none;">
     <div id="speedometer">Speed: 0 km/h</div>
     <button class="hud-btn" id="game-start-btn">Start</button>
@@ -113,14 +114,14 @@
   </div>
 
   <script>
-    let selectedDifficulty = 'easy';
+    let selectedTrack = 'track';
     let selectedCar = 'car';
 
     document.querySelectorAll('#track-choices img').forEach(img => {
       img.addEventListener('click', () => {
         document.querySelectorAll('#track-choices img').forEach(i => i.classList.remove('selected'));
         img.classList.add('selected');
-        selectedDifficulty = img.dataset.value;
+        selectedTrack = img.dataset.value;
       });
     });
 
@@ -143,10 +144,10 @@
       location.reload();
     });
 
-    function getFinishLineOffset() {
-      if (selectedDifficulty === 'easy') return 300;
-      if (selectedDifficulty === 'medium') return 900;
-      if (selectedDifficulty === 'hard') return 1500;
+    function getFinishDistance() {
+      if (selectedTrack === 'track') return 1000;   // easy
+      if (selectedTrack === 'track2') return 1800;  // medium
+      if (selectedTrack === 'track3') return 2600;  // hard
     }
 
     function startGame() {
@@ -158,27 +159,33 @@
         }
 
         preload() {
-          this.load.image('track', 'images/track.png');
+          this.load.image('track', `images/${selectedTrack}.png`);
           this.load.image('car', `images/${selectedCar}.png`);
           this.load.image('car2', selectedCar === 'car' ? 'images/car2.png' : 'images/car.png');
         }
 
         create() {
-          const bg = this.add.image(0, 0, 'track').setOrigin(0);
-          bg.setDisplaySize(this.scale.width, this.scale.height);
+          const finishDistance = getFinishDistance();
 
-          this.car = this.physics.add.sprite(this.scale.width / 2 - 100, this.scale.height - 100, 'car').setScale(0.15);
-          this.opponent = this.physics.add.sprite(this.scale.width / 2 + 100, this.scale.height - 100, 'car2').setScale(0.15);
+          this.add.tileSprite(0, 0, this.scale.width, finishDistance, 'track')
+            .setOrigin(0, 0)
+            .setScrollFactor(1);
+
+          this.physics.world.setBounds(0, 0, this.scale.width, finishDistance);
+
+          this.car = this.physics.add.sprite(this.scale.width / 2 - 100, finishDistance - 100, 'car').setScale(0.15);
+          this.opponent = this.physics.add.sprite(this.scale.width / 2 + 100, finishDistance - 100, 'car2').setScale(0.15);
 
           this.car.setCollideWorldBounds(true);
           this.opponent.setCollideWorldBounds(true);
 
+          this.cameras.main.startFollow(this.car);
+          this.cameras.main.setBounds(0, 0, this.scale.width, finishDistance);
+
           this.keys = this.input.keyboard.addKeys('W');
           this.finished = false;
 
-          const finishOffset = getFinishLineOffset();
-          const finishY = this.scale.height - finishOffset;
-          this.finishLine = this.add.zone(this.scale.width / 2, finishY, this.scale.width, 20);
+          this.finishLine = this.add.zone(this.scale.width / 2, 100, this.scale.width, 20);
           this.physics.world.enable(this.finishLine);
           this.finishLine.body.setAllowGravity(false);
           this.finishLine.body.moves = false;
@@ -191,7 +198,7 @@
           });
 
           document.getElementById('restart-btn').addEventListener('click', () => {
-            this.restartRace();
+            this.scene.restart();
             gameStarted = false;
           });
         }
@@ -232,14 +239,6 @@
             this.finished = true;
             alert('Opponent Wins!');
           }
-        }
-
-        restartRace() {
-          this.finished = false;
-          this.car.setPosition(this.scale.width / 2 - 100, this.scale.height - 100);
-          this.opponent.setPosition(this.scale.width / 2 + 100, this.scale.height - 100);
-          this.car.setVelocity(0);
-          this.opponent.setVelocity(0);
         }
       }
 
