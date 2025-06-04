@@ -51,6 +51,7 @@
     #phaser-example {
       display: none;
     }
+
     #hud {
       position: absolute;
       top: 15px;
@@ -60,6 +61,7 @@
       flex-direction: column;
       gap: 10px;
     }
+
     .hud-btn {
       font-family: monospace;
       font-size: 16px;
@@ -70,6 +72,7 @@
       border-radius: 8px;
       cursor: pointer;
     }
+
     #speedometer {
       font-family: monospace;
       font-size: 20px;
@@ -81,7 +84,6 @@
   </style>
 </head>
 <body>
-  <!-- Selection Menu -->
   <div id="menu">
     <div class="section">
       <h2>Select Track</h2>
@@ -111,31 +113,14 @@
   </div>
 
   <script>
-    let selectedTrack = 'track'; // default: easy
+    let selectedTrack = 'track';
     let selectedCar = 'car';
-
-    const trackDifficulty = {
-      track: 'easy',
-      track2: 'medium',
-      track3: 'hard'
-    };
-
-    function getTrackLength() {
-  switch (selectedTrack) {
-    case 'track': return 500;   // easy
-    case 'track2': return 1000; // medium
-    case 'track3': return 1600; // hard
-    default: return 500;
-  }
-}
-
 
     document.querySelectorAll('#track-choices img').forEach(img => {
       img.addEventListener('click', () => {
         document.querySelectorAll('#track-choices img').forEach(i => i.classList.remove('selected'));
         img.classList.add('selected');
         selectedTrack = img.dataset.value;
-        console.log("Track selected:", selectedTrack, "Difficulty:", trackDifficulty[selectedTrack]);
       });
     });
 
@@ -158,6 +143,15 @@
       location.reload();
     });
 
+    function getTrackLength() {
+      switch (selectedTrack) {
+        case 'track': return 1000; // Easy
+        case 'track2': return 2000; // Medium
+        case 'track3': return 3000; // Hard
+        default: return 1000;
+      }
+    }
+
     function startGame() {
       let gameStarted = false;
 
@@ -173,8 +167,8 @@
         }
 
         create() {
-          const bg = this.add.image(0, 0, 'track').setOrigin(0);
-          bg.setDisplaySize(this.scale.width, this.scale.height);
+          this.trackLength = getTrackLength();
+          this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'track').setOrigin(0);
 
           this.car = this.physics.add.sprite(this.scale.width / 2 - 100, this.scale.height - 100, 'car').setScale(0.15);
           this.opponent = this.physics.add.sprite(this.scale.width / 2 + 100, this.scale.height - 100, 'car2').setScale(0.15);
@@ -184,9 +178,10 @@
 
           this.keys = this.input.keyboard.addKeys('W');
           this.finished = false;
+          this.distanceTravelled = 0;
 
-          const finishY = this.scale.height - getTrackLength();
-          this.finishLine = this.add.zone(this.scale.width / 2, finishY, this.scale.width, 20);
+          this.finishLineY = -this.trackLength;
+          this.finishLine = this.add.zone(this.scale.width / 2, this.finishLineY, this.scale.width, 20);
           this.physics.world.enable(this.finishLine);
           this.finishLine.body.setAllowGravity(false);
           this.finishLine.body.moves = false;
@@ -199,12 +194,12 @@
           });
 
           document.getElementById('restart-btn').addEventListener('click', () => {
-            this.restartRace();
+            this.scene.restart();
             gameStarted = false;
           });
         }
 
-        update() {
+        update(time, delta) {
           if (this.finished || !gameStarted) return;
 
           const acceleration = 800;
@@ -224,7 +219,15 @@
             this.opponent.setVelocityY(-maxSpeed);
           }
 
-          const speedKmh = Math.round(Math.abs(this.car.body.velocity.y) * 3.6);
+          const carSpeed = Math.abs(this.car.body.velocity.y);
+          const deltaDistance = carSpeed * (delta / 1000);
+          this.distanceTravelled += deltaDistance;
+
+          this.bg.tilePositionY -= deltaDistance;
+          this.finishLine.y += deltaDistance;
+          this.opponent.y -= deltaDistance;
+
+          const speedKmh = Math.round(carSpeed * 3.6);
           document.getElementById('speedometer').textContent = `Speed: ${speedKmh} km/h`;
         }
 
@@ -240,14 +243,6 @@
             this.finished = true;
             alert('Opponent Wins!');
           }
-        }
-
-        restartRace() {
-          this.finished = false;
-          this.car.setPosition(this.scale.width / 2 - 100, this.scale.height - 100);
-          this.opponent.setPosition(this.scale.width / 2 + 100, this.scale.height - 100);
-          this.car.setVelocity(0);
-          this.opponent.setVelocity(0);
         }
       }
 
