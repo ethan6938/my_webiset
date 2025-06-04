@@ -80,10 +80,10 @@
 
       create() {
         // Center and scale track smaller so it fully fits inside canvas
-        this.track = this.add.image(400, 300, 'track').setScale(0.5);
+        this.track = this.add.image(400, 300, 'track').setScale(0.6);
 
         // Smaller car scale, positioned nicely on track
-        this.car = this.physics.add.sprite(400, 500, 'car').setScale(0.25);
+        this.car = this.physics.add.sprite(400, 500, 'car').setScale(0.15);
         this.car.setOrigin(0.5, 0.5);
         this.car.setDamping(true);
         this.car.setDrag(0.95);
