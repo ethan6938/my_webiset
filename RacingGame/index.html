@@ -112,33 +112,48 @@
       }
 
       update(time, delta) {
-        const dt = delta / 1000;
-        const acceleration = 300;
-        const maxSpeed = 400;
+  const dt = delta / 1000;
+  const acceleration = 300;
+  const maxSpeed = 400;
+  const turnSpeed = 2; // radians per second
 
-        const pointer = this.input.activePointer;
-        const angleToPointer = Phaser.Math.Angle.Between(this.car.x, this.car.y, pointer.worldX, pointer.worldY);
-        this.car.rotation = angleToPointer + Math.PI / 2;
+  const pointer = this.input.activePointer;
+  const targetAngle = Phaser.Math.Angle.Between(this.car.x, this.car.y, pointer.worldX, pointer.worldY);
+  const angleDiff = Phaser.Math.Angle.Wrap(targetAngle - Phaser.Math.DegToRad(this.car.angle));
 
-        const forward = new Phaser.Math.Vector2(Math.cos(angleToPointer), Math.sin(angleToPointer));
+  // Turn toward mouse smoothly
+  this.car.angle += Phaser.Math.RadToDeg(angleDiff) * turnSpeed * dt;
 
-        if (this.wKey.isDown) {
-          this.car.body.velocity.add(forward.scale(acceleration * dt));
-        } else {
-          this.car.body.velocity.scale(0.96);
-        }
+  // Convert car angle to vector
+  const rad = Phaser.Math.DegToRad(this.car.angle - 90);
+  const forward = new Phaser.Math.Vector2(Math.cos(rad), Math.sin(rad));
 
-        if (this.car.body.velocity.length() > maxSpeed) {
-          this.car.body.velocity.setLength(maxSpeed);
-        }
+  // Use W to move forward, S to reverse
+  const isW = this.input.keyboard.addKey('W').isDown;
+  const isS = this.input.keyboard.addKey('S').isDown;
 
-        this.car.x = Phaser.Math.Clamp(this.car.x, 50, 750);
-        this.car.y = Phaser.Math.Clamp(this.car.y, 50, 550);
+  if (isW) {
+    this.car.body.velocity.add(forward.scale(acceleration * dt));
+  } else if (isS) {
+    this.car.body.velocity.subtract(forward.scale(acceleration * dt));
+  } else {
+    this.car.body.velocity.scale(0.96); // natural drag
+  }
 
-        const speedKmh = Math.round(this.car.body.velocity.length() * 3.6);
-        this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
-        this.lapsCounter.textContent = `Laps: ${this.laps}`;
-      }
+  // Clamp to max speed
+  if (this.car.body.velocity.length() > maxSpeed) {
+    this.car.body.velocity.setLength(maxSpeed);
+  }
+
+  // Keep within track bounds
+  this.car.x = Phaser.Math.Clamp(this.car.x, 50, 750);
+  this.car.y = Phaser.Math.Clamp(this.car.y, 50, 550);
+
+  const speedKmh = Math.round(this.car.body.velocity.length() * 3.6);
+  this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
+  this.lapsCounter.textContent = `Laps: ${this.laps}`;
+}
+
 
       handleCheckpoint(car, checkpoint) {
         if (!this.checkpointPassed && car.body.velocity.length() > 80) {
