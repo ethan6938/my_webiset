@@ -51,43 +51,40 @@
     #phaser-example {
       display: none;
     }
-    #back-btn {
+
+    #hud {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 20;
-      padding: 10px;
-      background: rgba(255,255,255,0.2);
-      border: none;
+      top: 15px;
+      left: 15px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .hud-btn {
+      font-family: monospace;
+      font-size: 16px;
       color: white;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 12px;
+      border: 2px solid white;
+      border-radius: 8px;
       cursor: pointer;
     }
-    #speedometer, #restart-btn {
-      position: absolute;
+
+    #speedometer {
       font-family: monospace;
       font-size: 20px;
       color: white;
       background: rgba(0, 0, 0, 0.4);
       padding: 8px 12px;
       border-radius: 8px;
-      z-index: 10;
-    }
-    #speedometer {
-      top: 15px;
-      left: 15px;
-    }
-    #restart-btn {
-      bottom: 15px;
-      left: 50%;
-      transform: translateX(-50%);
-      cursor: pointer;
-      padding: 10px 20px;
-      background: rgba(255, 255, 255, 0.15);
-      border: 2px solid white;
     }
   </style>
 </head>
 <body>
+  <!-- Selection Menu -->
   <div id="menu">
     <div class="section">
       <h2>Select Track</h2>
@@ -107,10 +104,16 @@
     <button id="start-btn">Start Race</button>
   </div>
 
+  <!-- Game Canvas -->
   <div id="phaser-example"></div>
-  <div id="speedometer">Speed: 0 km/h</div>
-  <button id="restart-btn">Restart</button>
-  <button id="back-btn">Back</button>
+
+  <!-- HUD -->
+  <div id="hud" style="display: none;">
+    <div id="speedometer">Speed: 0 km/h</div>
+    <button class="hud-btn" id="game-start-btn">Start</button>
+    <button class="hud-btn" id="restart-btn">Restart</button>
+    <button class="hud-btn" id="back-btn">Back</button>
+  </div>
 
   <script>
     let selectedTrack = 'easy';
@@ -135,9 +138,7 @@
     document.getElementById('start-btn').addEventListener('click', () => {
       document.getElementById('menu').style.display = 'none';
       document.getElementById('phaser-example').style.display = 'block';
-      document.getElementById('speedometer').style.display = 'block';
-      document.getElementById('restart-btn').style.display = 'block';
-      document.getElementById('back-btn').style.display = 'block';
+      document.getElementById('hud').style.display = 'flex';
       startGame();
     });
 
@@ -146,6 +147,8 @@
     });
 
     function startGame() {
+      let gameStarted = false;
+
       class DragRace extends Phaser.Scene {
         constructor() {
           super('DragRace');
@@ -177,10 +180,22 @@
 
           this.physics.add.overlap(this.car, this.finishLine, this.playerWins, null, this);
           this.physics.add.overlap(this.opponent, this.finishLine, this.opponentWins, null, this);
+
+          // Hook start button
+          document.getElementById('game-start-btn').addEventListener('click', () => {
+            gameStarted = true;
+          });
+
+          // Restart button
+          document.getElementById('restart-btn').addEventListener('click', () => {
+            this.restartRace();
+            gameStarted = false;
+          });
         }
 
-        update(time, delta) {
-          if (this.finished) return;
+        update() {
+          if (this.finished || !gameStarted) return;
+
           const acceleration = 800;
           const maxSpeed = 600;
 
@@ -225,7 +240,7 @@
         }
       }
 
-      const config = {
+      new Phaser.Game({
         type: Phaser.AUTO,
         width: window.innerWidth,
         height: window.innerHeight,
@@ -233,22 +248,13 @@
         parent: 'phaser-example',
         physics: {
           default: 'arcade',
-          arcade: {
-            gravity: { y: 0 },
-            debug: false
-          }
+          arcade: { gravity: { y: 0 }, debug: false }
         },
         scene: DragRace,
         scale: {
           mode: Phaser.Scale.RESIZE,
           autoCenter: Phaser.Scale.CENTER_BOTH
         }
-      };
-
-      new Phaser.Game(config);
-
-      document.getElementById('restart-btn').addEventListener('click', () => {
-        location.reload();
       });
     }
   </script>
