@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Super Fast Racer</title>
+  <title>Drag Race</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
   <style>
     body {
       margin: 0;
-      background: #0c5e03;
+      background: #111;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -17,12 +17,12 @@
     }
     #phaser-example {
       border: 4px solid #fff;
-      box-shadow: 0 0 25px #0c5e03;
+      box-shadow: 0 0 25px #111;
       max-width: 100vw;
       max-height: 100vh;
       position: relative;
     }
-    #speedometer, #laps-counter, #restart-btn {
+    #speedometer, #restart-btn, #winner-banner {
       position: absolute;
       font-family: monospace;
       font-size: 20px;
@@ -31,16 +31,11 @@
       padding: 8px 12px;
       border-radius: 8px;
       user-select: none;
-      pointer-events: none;
       z-index: 100;
     }
     #speedometer {
       top: 15px;
       left: 15px;
-    }
-    #laps-counter {
-      top: 15px;
-      right: 15px;
     }
     #restart-btn {
       bottom: 15px;
@@ -48,7 +43,6 @@
       transform: translateX(-50%);
       pointer-events: auto;
       cursor: pointer;
-      user-select: auto;
       padding: 10px 20px;
       background: rgba(255, 255, 255, 0.15);
       border: 2px solid white;
@@ -57,18 +51,26 @@
     #restart-btn:hover {
       background: rgba(255, 255, 255, 0.4);
     }
+    #winner-banner {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 28px;
+      display: none;
+      background: rgba(0, 0, 0, 0.8);
+    }
   </style>
 </head>
 <body>
   <div id="phaser-example"></div>
   <div id="speedometer">Speed: 0 km/h</div>
-  <div id="laps-counter">Laps: 0</div>
+  <div id="winner-banner">You Win!</div>
   <button id="restart-btn">Restart</button>
 
   <script>
-    class SuperFastRacer extends Phaser.Scene {
+    class DragRace extends Phaser.Scene {
       constructor() {
-        super('SuperFastRacer');
+        super('DragRace');
       }
 
       preload() {
@@ -78,101 +80,117 @@
       }
 
       create() {
-        this.track = this.add.image(400, 300, 'track').setScale(0.8);
-
-        this.car = this.physics.add.sprite(400, 500, 'car').setScale(0.15);
-        this.opponent = this.physics.add.sprite(400, 300, 'opponent').setScale(0.15);
-
-        this.car.setDamping(true);
-        this.car.setDrag(0.95);
-        this.car.setMaxVelocity(550);
-        this.car.body.collideWorldBounds = true;
-
-        this.opponent.setImmovable(true);
-        this.physics.add.collider(this.car, this.opponent);
-
-        this.physics.world.setBounds(50, 50, 700, 500);
-
-        this.walls = this.physics.add.staticGroup();
-        this.walls.create(50, 300, null).setSize(10, 500).setVisible(false).refreshBody();
-        this.walls.create(750, 300, null).setSize(10, 500).setVisible(false).refreshBody();
-        this.walls.create(400, 50, null).setSize(700, 10).setVisible(false).refreshBody();
-        this.walls.create(400, 550, null).setSize(700, 10).setVisible(false).refreshBody();
-        this.physics.add.collider(this.car, this.walls);
-
+        this.add.image(400, 300, 'track').setScale(0.8);
         this.speedometer = document.getElementById('speedometer');
-        this.lapsCounter = document.getElementById('laps-counter');
         this.restartBtn = document.getElementById('restart-btn');
+        this.winnerBanner = document.getElementById('winner-banner');
+
+        this.car = this.physics.add.sprite(300, 500, 'car').setScale(0.15);
+        this.opponent = this.physics.add.sprite(500, 500, 'opponent').setScale(0.15);
+        this.car.setMaxVelocity(600);
+        this.opponent.setMaxVelocity(600);
+        this.car.setCollideWorldBounds(true);
+        this.opponent.setCollideWorldBounds(true);
+
+        this.physics.world.setBounds(0, 0, 800, 600);
+
+        this.finishLine = this.add.zone(400, 100, 800, 10);
+        this.physics.world.enable(this.finishLine);
+        this.finishLine.body.setAllowGravity(false);
+        this.finishLine.body.moves = false;
+
+        this.physics.add.overlap(this.car, this.finishLine, this.playerWins, null, this);
+        this.physics.add.overlap(this.opponent, this.finishLine, this.opponentWins, null, this);
+
+        this.keys = this.input.keyboard.addKeys('W');
+        this.finished = false;
+        this.raceStarted = false;
+
         this.restartBtn.addEventListener('click', () => this.restartRace());
 
-        this.laps = 0;
-        this.checkpointPassed = false;
+        this.countdownText = this.add.text(400, 300, '', {
+          fontSize: '64px',
+          color: '#fff'
+        }).setOrigin(0.5);
 
-        this.checkpoint = this.add.zone(400, 60, 200, 20);
-        this.physics.world.enable(this.checkpoint);
-        this.checkpoint.body.setAllowGravity(false);
-        this.checkpoint.body.moves = false;
-        this.physics.add.overlap(this.car, this.checkpoint, this.handleCheckpoint, null, this);
+        this.startCountdown();
+      }
 
-        this.keys = this.input.keyboard.addKeys('W,S,A,D');
+      startCountdown() {
+        let countdown = ['3', '2', '1', 'GO!'];
+        let index = 0;
+
+        this.time.addEvent({
+          delay: 1000,
+          repeat: countdown.length - 1,
+          callback: () => {
+            this.countdownText.setText(countdown[index]);
+            if (countdown[index] === 'GO!') {
+              this.raceStarted = true;
+              this.countdownText.setText('');
+              this.opponentStartDelay = Phaser.Math.Between(300, 1000);
+              this.time.delayedCall(this.opponentStartDelay, () => {
+                this.opponent.setAccelerationY(-600);
+              });
+            }
+            index++;
+          }
+        });
       }
 
       update(time, delta) {
         const dt = delta / 1000;
-        const maxSpeed = 400;
-        const acceleration = 500;
-        const reverseAccel = 250;
-        const turnSpeed = 180;
-        const drag = 0.98;
+        const acceleration = 800;
+        const maxSpeed = 600;
 
-        const { W, S, A, D } = this.keys;
+        if (this.raceStarted && !this.finished) {
+          if (this.keys.W.isDown) {
+            this.car.setAccelerationY(-acceleration);
+          } else {
+            this.car.setAccelerationY(0);
+            this.car.setDragY(400);
+          }
 
-        const rad = Phaser.Math.DegToRad(this.car.angle - 90);
-        const forward = new Phaser.Math.Vector2(Math.cos(rad), Math.sin(rad));
-
-        if (this.car.body.velocity.length() > 5) {
-          const turnAmount = turnSpeed * dt * (this.car.body.velocity.length() / maxSpeed);
-          if (A.isDown) this.car.angle -= turnAmount;
-          if (D.isDown) this.car.angle += turnAmount;
+          if (this.opponent.body.velocity.y < -maxSpeed) {
+            this.opponent.setVelocityY(-maxSpeed);
+            this.opponent.setAccelerationY(0);
+          }
         }
 
-        if (W.isDown) {
-          this.car.body.velocity.add(forward.clone().scale(acceleration * dt));
-        } else if (S.isDown) {
-          this.car.body.velocity.subtract(forward.clone().scale(reverseAccel * dt));
-        }
-
-        this.car.body.velocity.scale(drag);
-
-        if (this.car.body.velocity.length() > maxSpeed) {
-          this.car.body.velocity.setLength(maxSpeed);
-        }
-
-        this.car.x = Phaser.Math.Clamp(this.car.x, 50, 750);
-        this.car.y = Phaser.Math.Clamp(this.car.y, 50, 550);
-
-        const speedKmh = Math.round(this.car.body.velocity.length() * 3.6);
+        const speedKmh = Math.round(Math.abs(this.car.body.velocity.y) * 3.6);
         this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
-        this.lapsCounter.textContent = `Laps: ${this.laps}`;
-
-        // Simple AI opponent movement
-        this.opponent.setVelocityY(Math.sin(time / 500) * 50);
       }
 
-      handleCheckpoint(car, checkpoint) {
-        if (!this.checkpointPassed && car.body.velocity.length() > 80) {
-          this.laps++;
-          this.checkpointPassed = true;
-          this.time.delayedCall(2000, () => this.checkpointPassed = false);
+      playerWins() {
+        if (!this.finished) {
+          this.finished = true;
+          this.showWinner("You Win!");
         }
+      }
+
+      opponentWins() {
+        if (!this.finished) {
+          this.finished = true;
+          this.showWinner("Opponent Wins!");
+        }
+      }
+
+      showWinner(text) {
+        this.winnerBanner.textContent = text;
+        this.winnerBanner.style.display = 'block';
       }
 
       restartRace() {
-        this.laps = 0;
-        this.car.setPosition(400, 500);
-        this.car.setVelocity(0, 0);
-        this.car.setAngle(0);
-        this.checkpointPassed = false;
+        this.finished = false;
+        this.raceStarted = false;
+        this.winnerBanner.style.display = 'none';
+        this.car.setPosition(300, 500);
+        this.opponent.setPosition(500, 500);
+        this.car.setVelocity(0);
+        this.opponent.setVelocity(0);
+        this.car.setAccelerationY(0);
+        this.opponent.setAccelerationY(0);
+        this.startCountdown();
       }
     }
 
@@ -180,7 +198,7 @@
       type: Phaser.AUTO,
       width: 800,
       height: 600,
-      backgroundColor: '#0c5e03',
+      backgroundColor: '#111',
       parent: 'phaser-example',
       physics: {
         default: 'arcade',
@@ -189,7 +207,7 @@
           gravity: { y: 0 }
         }
       },
-      scene: SuperFastRacer,
+      scene: DragRace,
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
