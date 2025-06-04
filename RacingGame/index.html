@@ -51,7 +51,6 @@
     #phaser-example {
       display: none;
     }
-
     #hud {
       position: absolute;
       top: 15px;
@@ -61,7 +60,6 @@
       flex-direction: column;
       gap: 10px;
     }
-
     .hud-btn {
       font-family: monospace;
       font-size: 16px;
@@ -72,7 +70,6 @@
       border-radius: 8px;
       cursor: pointer;
     }
-
     #speedometer {
       font-family: monospace;
       font-size: 20px;
@@ -84,13 +81,14 @@
   </style>
 </head>
 <body>
+  <!-- Selection Menu -->
   <div id="menu">
     <div class="section">
       <h2>Select Track</h2>
       <div class="choices" id="track-choices">
-        <img src="images/track.png" data-value="easy">
-        <img src="images/track2.png" data-value="medium">
-        <img src="images/track3.png" data-value="hard">
+        <img src="images/track.png" data-value="track">
+        <img src="images/track2.png" data-value="track2">
+        <img src="images/track3.png" data-value="track3">
       </div>
     </div>
     <div class="section">
@@ -113,14 +111,30 @@
   </div>
 
   <script>
-    let selectedTrack = 'track';
+    let selectedTrack = 'track'; // default: easy
     let selectedCar = 'car';
+
+    const trackDifficulty = {
+      track: 'easy',
+      track2: 'medium',
+      track3: 'hard'
+    };
+
+    function getTrackLength() {
+      switch (selectedTrack) {
+        case 'track': return 100;     // easy
+        case 'track2': return 600;    // medium
+        case 'track3': return 1000;   // hard
+        default: return 100;
+      }
+    }
 
     document.querySelectorAll('#track-choices img').forEach(img => {
       img.addEventListener('click', () => {
         document.querySelectorAll('#track-choices img').forEach(i => i.classList.remove('selected'));
         img.classList.add('selected');
         selectedTrack = img.dataset.value;
+        console.log("Track selected:", selectedTrack, "Difficulty:", trackDifficulty[selectedTrack]);
       });
     });
 
@@ -142,12 +156,6 @@
     document.getElementById('back-btn').addEventListener('click', () => {
       location.reload();
     });
-
-    function getTrackLength() {
-      if (selectedTrack === 'track') return 100;
-      if (selectedTrack === 'track2') return 500;
-      if (selectedTrack === 'track3') return 1000;
-    }
 
     function startGame() {
       let gameStarted = false;
