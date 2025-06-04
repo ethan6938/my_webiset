@@ -167,18 +167,9 @@
         create() {
           const finishDistance = getFinishDistance();
 
-          // this.add.tileSprite(0, 0, this.scale.width, finishDistance, 'track')
-          //   .setOrigin(0, 0)
-          //   .setScrollFactor(1);
-
-          this.add.tileSprite(
-              0, 
-              0, 
-              this.sys.game.config.width, // width matches game width, no horizontal repeat if track image is wide enough
-              this.textures.get('track').getSourceImage().height, // height of track image
-              'track'
-            ).setOrigin(0, 0);
-          
+          this.add.tileSprite(0, 0, this.scale.width, finishDistance, 'track')
+            .setOrigin(0, 0)
+            .setScrollFactor(1);
 
           this.physics.world.setBounds(0, 0, this.scale.width, finishDistance);
 
