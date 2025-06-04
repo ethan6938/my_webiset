@@ -79,12 +79,12 @@
         // Player car, origin center for smooth rotation
         this.car = this.physics.add.sprite(400, 500, 'car').setScale(0.15);
         this.car.setOrigin(0.5, 0.5);
-        this.car.setAngle(-160);  // face straight up
+        this.car.setAngle(-90);  // face straight up
 
         // Opponent car positioned right side, also facing up
         this.opponent = this.physics.add.sprite(450, 500, 'opponent').setScale(0.15);
         this.opponent.setOrigin(0.5, 0.5);
-        this.opponent.setAngle(-160);
+        this.opponent.setAngle(-90);
 
         // Set world boundaries and keep cars inside
         this.physics.world.setBounds(0, 0, 800, 600);
