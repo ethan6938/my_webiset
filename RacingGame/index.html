@@ -8,16 +8,11 @@
     body {
       margin: 0;
       background: #111;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       overflow: hidden;
     }
     #phaser-example {
-      border: 4px solid #fff;
-      box-shadow: 0 0 25px #111;
-      position: relative;
+      width: 100vw;
+      height: 100vh;
     }
     #speedometer, #restart-btn {
       position: absolute;
@@ -66,12 +61,11 @@
       }
 
       create() {
-        // Background track
-        this.add.image(400, 300, 'track').setScale(0.8);
+        const bg = this.add.image(0, 0, 'track').setOrigin(0);
+        bg.setDisplaySize(this.scale.width, this.scale.height);
 
-        // Cars placed at the bottom of the track
-        this.car = this.physics.add.sprite(350, 500, 'car').setScale(0.15);
-        this.opponent = this.physics.add.sprite(450, 500, 'opponent').setScale(0.15);
+        this.car = this.physics.add.sprite(300, 500, 'car').setScale(0.15).setAngle(0);
+        this.opponent = this.physics.add.sprite(500, 500, 'opponent').setScale(0.15).setAngle(0);
 
         this.car.setCollideWorldBounds(true);
         this.opponent.setCollideWorldBounds(true);
@@ -83,8 +77,8 @@
         this.keys = this.input.keyboard.addKeys('W');
         this.finished = false;
 
-        // Finish line zone
-        this.finishLine = this.add.zone(400, 100, 800, 10);
+        // Adjust the finish line to match track image (example at y = 100)
+        this.finishLine = this.add.zone(400, 120, 800, 20);
         this.physics.world.enable(this.finishLine);
         this.finishLine.body.setAllowGravity(false);
         this.finishLine.body.moves = false;
@@ -99,7 +93,6 @@
         const acceleration = 800;
         const maxSpeed = 600;
 
-        // Player car straight-line acceleration
         if (this.keys.W.isDown) {
           this.car.setAccelerationY(-acceleration);
         } else {
@@ -107,7 +100,6 @@
           this.car.setDragY(400);
         }
 
-        // Simple AI: accelerate until max speed
         if (this.opponent.body.velocity.y > -maxSpeed) {
           this.opponent.setAccelerationY(-600);
         } else {
@@ -115,7 +107,6 @@
           this.opponent.setVelocityY(-maxSpeed);
         }
 
-        // Speed display
         const speedKmh = Math.round(Math.abs(this.car.body.velocity.y) * 3.6);
         this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
       }
@@ -136,8 +127,8 @@
 
       restartRace() {
         this.finished = false;
-        this.car.setPosition(350, 500);
-        this.opponent.setPosition(450, 500);
+        this.car.setPosition(300, 500);
+        this.opponent.setPosition(500, 500);
         this.car.setVelocity(0);
         this.opponent.setVelocity(0);
       }
@@ -145,8 +136,8 @@
 
     const config = {
       type: Phaser.AUTO,
-      width: 800,
-      height: 600,
+      width: window.innerWidth,
+      height: window.innerHeight,
       backgroundColor: '#111',
       parent: 'phaser-example',
       physics: {
@@ -158,7 +149,7 @@
       },
       scene: DragRace,
       scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
       }
     };
