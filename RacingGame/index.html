@@ -13,13 +13,10 @@
       align-items: center;
       height: 100vh;
       overflow: hidden;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     #phaser-example {
       border: 4px solid #fff;
       box-shadow: 0 0 25px #111;
-      max-width: 100vw;
-      max-height: 100vh;
       position: relative;
     }
     #speedometer, #restart-btn {
@@ -30,9 +27,7 @@
       background: rgba(0, 0, 0, 0.4);
       padding: 8px 12px;
       border-radius: 8px;
-      user-select: none;
-      pointer-events: none;
-      z-index: 100;
+      z-index: 10;
     }
     #speedometer {
       top: 15px;
@@ -42,9 +37,7 @@
       bottom: 15px;
       left: 50%;
       transform: translateX(-50%);
-      pointer-events: auto;
       cursor: pointer;
-      user-select: auto;
       padding: 10px 20px;
       background: rgba(255, 255, 255, 0.15);
       border: 2px solid white;
@@ -73,41 +66,29 @@
       }
 
       create() {
-        // Track background, centered, scaled
+        // Background track
         this.add.image(400, 300, 'track').setScale(0.8);
 
-        // Player car, origin center for smooth rotation
-        this.car = this.physics.add.sprite(400, 500, 'car').setScale(0.15);
-        this.car.setOrigin(0.5, 0.5);
-        this.car.setAngle(-90);  // face straight up
-
-        // Opponent car positioned right side, also facing up
+        // Cars placed at the bottom of the track
+        this.car = this.physics.add.sprite(350, 500, 'car').setScale(0.15);
         this.opponent = this.physics.add.sprite(450, 500, 'opponent').setScale(0.15);
-        this.opponent.setOrigin(0.5, 0.5);
-        this.opponent.setAngle(-90);
 
-        // Set world boundaries and keep cars inside
-        this.physics.world.setBounds(0, 0, 800, 600);
         this.car.setCollideWorldBounds(true);
         this.opponent.setCollideWorldBounds(true);
 
-        // Controls - just W key for acceleration
-        this.keys = this.input.keyboard.addKeys('W');
-
-        // Speedometer and restart button setup
         this.speedometer = document.getElementById('speedometer');
         this.restartBtn = document.getElementById('restart-btn');
         this.restartBtn.addEventListener('click', () => this.restartRace());
 
+        this.keys = this.input.keyboard.addKeys('W');
         this.finished = false;
 
-        // Finish line zone near the top
+        // Finish line zone
         this.finishLine = this.add.zone(400, 100, 800, 10);
         this.physics.world.enable(this.finishLine);
         this.finishLine.body.setAllowGravity(false);
         this.finishLine.body.moves = false;
 
-        // Overlap checks for win conditions
         this.physics.add.overlap(this.car, this.finishLine, this.playerWins, null, this);
         this.physics.add.overlap(this.opponent, this.finishLine, this.opponentWins, null, this);
       }
@@ -115,11 +96,10 @@
       update(time, delta) {
         if (this.finished) return;
 
-        const dt = delta / 1000;
         const acceleration = 800;
         const maxSpeed = 600;
 
-        // Player car acceleration control
+        // Player car straight-line acceleration
         if (this.keys.W.isDown) {
           this.car.setAccelerationY(-acceleration);
         } else {
@@ -127,7 +107,7 @@
           this.car.setDragY(400);
         }
 
-        // Opponent AI acceleration up to max speed
+        // Simple AI: accelerate until max speed
         if (this.opponent.body.velocity.y > -maxSpeed) {
           this.opponent.setAccelerationY(-600);
         } else {
@@ -135,7 +115,7 @@
           this.opponent.setVelocityY(-maxSpeed);
         }
 
-        // Update speedometer with absolute vertical speed in km/h
+        // Speed display
         const speedKmh = Math.round(Math.abs(this.car.body.velocity.y) * 3.6);
         this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
       }
@@ -156,15 +136,10 @@
 
       restartRace() {
         this.finished = false;
-        this.car.setPosition(400, 500);
-        this.car.setVelocity(0);
-        this.car.setAcceleration(0);
-        this.car.setAngle(-90);
-
+        this.car.setPosition(350, 500);
         this.opponent.setPosition(450, 500);
+        this.car.setVelocity(0);
         this.opponent.setVelocity(0);
-        this.opponent.setAcceleration(0);
-        this.opponent.setAngle(-90);
       }
     }
 
@@ -177,8 +152,8 @@
       physics: {
         default: 'arcade',
         arcade: {
-          debug: false,
-          gravity: { y: 0 }
+          gravity: { y: 0 },
+          debug: false
         }
       },
       scene: DragRace,
