@@ -51,7 +51,6 @@
     #phaser-example {
       display: none;
     }
-
     #hud {
       position: absolute;
       top: 15px;
@@ -61,7 +60,6 @@
       flex-direction: column;
       gap: 10px;
     }
-
     .hud-btn {
       font-family: monospace;
       font-size: 16px;
@@ -72,7 +70,6 @@
       border-radius: 8px;
       cursor: pointer;
     }
-
     #speedometer {
       font-family: monospace;
       font-size: 20px;
@@ -84,27 +81,30 @@
   </style>
 </head>
 <body>
+  <!-- Menu -->
   <div id="menu">
     <div class="section">
       <h2>Select Track</h2>
       <div class="choices" id="track-choices">
-        <img src="images/track.png" data-value="track">
-        <img src="images/track2.png" data-value="track2">
-        <img src="images/track3.png" data-value="track3">
+        <img src="images/track.png" data-value="easy" class="selected">
+        <img src="images/track.png" data-value="medium">
+        <img src="images/track.png" data-value="hard">
       </div>
     </div>
     <div class="section">
       <h2>Select Car</h2>
       <div class="choices" id="car-choices">
-        <img src="images/car.png" data-value="car">
+        <img src="images/car.png" data-value="car" class="selected">
         <img src="images/car2.png" data-value="car2">
       </div>
     </div>
     <button id="start-btn">Start Race</button>
   </div>
 
+  <!-- Game Canvas -->
   <div id="phaser-example"></div>
 
+  <!-- HUD -->
   <div id="hud" style="display: none;">
     <div id="speedometer">Speed: 0 km/h</div>
     <button class="hud-btn" id="game-start-btn">Start</button>
@@ -113,14 +113,14 @@
   </div>
 
   <script>
-    let selectedTrack = 'track';
+    let selectedDifficulty = 'easy';
     let selectedCar = 'car';
 
     document.querySelectorAll('#track-choices img').forEach(img => {
       img.addEventListener('click', () => {
         document.querySelectorAll('#track-choices img').forEach(i => i.classList.remove('selected'));
         img.classList.add('selected');
-        selectedTrack = img.dataset.value;
+        selectedDifficulty = img.dataset.value;
       });
     });
 
@@ -143,13 +143,10 @@
       location.reload();
     });
 
-    function getTrackLength() {
-      switch (selectedTrack) {
-        case 'track': return 1000; // Easy
-        case 'track2': return 2000; // Medium
-        case 'track3': return 3000; // Hard
-        default: return 1000;
-      }
+    function getFinishLineOffset() {
+      if (selectedDifficulty === 'easy') return 300;
+      if (selectedDifficulty === 'medium') return 900;
+      if (selectedDifficulty === 'hard') return 1500;
     }
 
     function startGame() {
@@ -161,14 +158,14 @@
         }
 
         preload() {
-          this.load.image('track', `images/${selectedTrack}.png`);
+          this.load.image('track', 'images/track.png');
           this.load.image('car', `images/${selectedCar}.png`);
           this.load.image('car2', selectedCar === 'car' ? 'images/car2.png' : 'images/car.png');
         }
 
         create() {
-          this.trackLength = getTrackLength();
-          this.bg = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, 'track').setOrigin(0);
+          const bg = this.add.image(0, 0, 'track').setOrigin(0);
+          bg.setDisplaySize(this.scale.width, this.scale.height);
 
           this.car = this.physics.add.sprite(this.scale.width / 2 - 100, this.scale.height - 100, 'car').setScale(0.15);
           this.opponent = this.physics.add.sprite(this.scale.width / 2 + 100, this.scale.height - 100, 'car2').setScale(0.15);
@@ -178,10 +175,10 @@
 
           this.keys = this.input.keyboard.addKeys('W');
           this.finished = false;
-          this.distanceTravelled = 0;
 
-          this.finishLineY = -this.trackLength;
-          this.finishLine = this.add.zone(this.scale.width / 2, this.finishLineY, this.scale.width, 20);
+          const finishOffset = getFinishLineOffset();
+          const finishY = this.scale.height - finishOffset;
+          this.finishLine = this.add.zone(this.scale.width / 2, finishY, this.scale.width, 20);
           this.physics.world.enable(this.finishLine);
           this.finishLine.body.setAllowGravity(false);
           this.finishLine.body.moves = false;
@@ -194,12 +191,12 @@
           });
 
           document.getElementById('restart-btn').addEventListener('click', () => {
-            this.scene.restart();
+            this.restartRace();
             gameStarted = false;
           });
         }
 
-        update(time, delta) {
+        update() {
           if (this.finished || !gameStarted) return;
 
           const acceleration = 800;
@@ -219,15 +216,7 @@
             this.opponent.setVelocityY(-maxSpeed);
           }
 
-          const carSpeed = Math.abs(this.car.body.velocity.y);
-          const deltaDistance = carSpeed * (delta / 1000);
-          this.distanceTravelled += deltaDistance;
-
-          this.bg.tilePositionY -= deltaDistance;
-          this.finishLine.y += deltaDistance;
-          this.opponent.y -= deltaDistance;
-
-          const speedKmh = Math.round(carSpeed * 3.6);
+          const speedKmh = Math.round(Math.abs(this.car.body.velocity.y) * 3.6);
           document.getElementById('speedometer').textContent = `Speed: ${speedKmh} km/h`;
         }
 
@@ -243,6 +232,14 @@
             this.finished = true;
             alert('Opponent Wins!');
           }
+        }
+
+        restartRace() {
+          this.finished = false;
+          this.car.setPosition(this.scale.width / 2 - 100, this.scale.height - 100);
+          this.opponent.setPosition(this.scale.width / 2 + 100, this.scale.height - 100);
+          this.car.setVelocity(0);
+          this.opponent.setVelocity(0);
         }
       }
 
