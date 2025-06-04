@@ -113,61 +113,47 @@
 
       update(time, delta) {
   const dt = delta / 1000;
+  const acceleration = 300;
   const maxSpeed = 400;
-  const acceleration = 600;
-  const reverseAccel = 300;
-  const turnSpeed = 180; // degrees per second
-  const drift = 0.92;
-  const drag = 0.99;
+  const turnSpeed = 150; // degrees per second
 
+  // Get custom keys
   const keyW = this.input.keyboard.addKey('W');
   const keyS = this.input.keyboard.addKey('S');
   const keyA = this.input.keyboard.addKey('A');
   const keyD = this.input.keyboard.addKey('D');
 
-  // Get direction car is facing
-  const angleRad = Phaser.Math.DegToRad(this.car.angle - 90);
-  const forward = new Phaser.Math.Vector2(Math.cos(angleRad), Math.sin(angleRad));
-
-  // Turning only works if the car is moving
-  const speed = this.car.body.velocity.length();
-
-  if (speed > 5) {
-    const turnAmount = turnSpeed * dt * (speed / maxSpeed);
-    if (keyA.isDown) {
-      this.car.angle -= turnAmount;
-    }
-    if (keyD.isDown) {
-      this.car.angle += turnAmount;
-    }
+  // Rotation control
+  if (keyA.isDown) {
+    this.car.angle -= turnSpeed * dt;
+  }
+  if (keyD.isDown) {
+    this.car.angle += turnSpeed * dt;
   }
 
-  // Apply acceleration or reverse
+  // Forward vector based on current rotation
+  const rad = Phaser.Math.DegToRad(this.car.angle - 90);
+  const forward = new Phaser.Math.Vector2(Math.cos(rad), Math.sin(rad));
+
+  // Forward/backward movement
   if (keyW.isDown) {
-    this.car.body.velocity.add(forward.clone().scale(acceleration * dt));
+    this.car.body.velocity.add(forward.scale(acceleration * dt));
   } else if (keyS.isDown) {
-    this.car.body.velocity.subtract(forward.clone().scale(reverseAccel * dt));
+    this.car.body.velocity.subtract(forward.scale(acceleration * dt));
+  } else {
+    this.car.body.velocity.scale(0.96); // Apply drag
   }
 
-  // Simulate drift by blending current velocity with forward direction
-  const currentVelocity = this.car.body.velocity.clone();
-  const projected = forward.clone().scale(currentVelocity.dot(forward));
-  const newVelocity = Phaser.Math.Vector2.Lerp(currentVelocity, projected, 1 - drift);
-  this.car.body.velocity.copy(newVelocity);
-
-  // Apply drag to simulate friction
-  this.car.body.velocity.scale(drag);
-
-  // Clamp speed
+  // Clamp max speed
   if (this.car.body.velocity.length() > maxSpeed) {
     this.car.body.velocity.setLength(maxSpeed);
   }
 
-  // Keep inside bounds
+  // Keep car within world bounds
   this.car.x = Phaser.Math.Clamp(this.car.x, 50, 750);
   this.car.y = Phaser.Math.Clamp(this.car.y, 50, 550);
 
-  // UI updates
+  // Update speedometer and laps
   const speedKmh = Math.round(this.car.body.velocity.length() * 3.6);
   this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
   this.lapsCounter.textContent = `Laps: ${this.laps}`;
