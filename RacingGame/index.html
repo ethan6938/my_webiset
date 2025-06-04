@@ -115,44 +115,50 @@
   const dt = delta / 1000;
   const acceleration = 300;
   const maxSpeed = 400;
-  const turnSpeed = 2; // radians per second
+  const turnSpeed = 150; // degrees per second
 
-  const pointer = this.input.activePointer;
-  const targetAngle = Phaser.Math.Angle.Between(this.car.x, this.car.y, pointer.worldX, pointer.worldY);
-  const angleDiff = Phaser.Math.Angle.Wrap(targetAngle - Phaser.Math.DegToRad(this.car.angle));
+  // Get custom keys
+  const keyW = this.input.keyboard.addKey('W');
+  const keyS = this.input.keyboard.addKey('S');
+  const keyA = this.input.keyboard.addKey('A');
+  const keyD = this.input.keyboard.addKey('D');
 
-  // Turn toward mouse smoothly
-  this.car.angle += Phaser.Math.RadToDeg(angleDiff) * turnSpeed * dt;
+  // Rotation control
+  if (keyA.isDown) {
+    this.car.angle -= turnSpeed * dt;
+  }
+  if (keyD.isDown) {
+    this.car.angle += turnSpeed * dt;
+  }
 
-  // Convert car angle to vector
+  // Forward vector based on current rotation
   const rad = Phaser.Math.DegToRad(this.car.angle - 90);
   const forward = new Phaser.Math.Vector2(Math.cos(rad), Math.sin(rad));
 
-  // Use W to move forward, S to reverse
-  const isW = this.input.keyboard.addKey('W').isDown;
-  const isS = this.input.keyboard.addKey('S').isDown;
-
-  if (isW) {
+  // Forward/backward movement
+  if (keyW.isDown) {
     this.car.body.velocity.add(forward.scale(acceleration * dt));
-  } else if (isS) {
+  } else if (keyS.isDown) {
     this.car.body.velocity.subtract(forward.scale(acceleration * dt));
   } else {
-    this.car.body.velocity.scale(0.96); // natural drag
+    this.car.body.velocity.scale(0.96); // Apply drag
   }
 
-  // Clamp to max speed
+  // Clamp max speed
   if (this.car.body.velocity.length() > maxSpeed) {
     this.car.body.velocity.setLength(maxSpeed);
   }
 
-  // Keep within track bounds
+  // Keep car within world bounds
   this.car.x = Phaser.Math.Clamp(this.car.x, 50, 750);
   this.car.y = Phaser.Math.Clamp(this.car.y, 50, 550);
 
+  // Update speedometer and laps
   const speedKmh = Math.round(this.car.body.velocity.length() * 3.6);
   this.speedometer.textContent = `Speed: ${speedKmh} km/h`;
   this.lapsCounter.textContent = `Laps: ${this.laps}`;
 }
+
 
 
       handleCheckpoint(car, checkpoint) {
