@@ -84,14 +84,13 @@
   </style>
 </head>
 <body>
-  <!-- Selection Menu -->
   <div id="menu">
     <div class="section">
       <h2>Select Track</h2>
       <div class="choices" id="track-choices">
-        <img src="images/easy.png" data-value="easy">
-        <img src="images/medium.png" data-value="medium">
-        <img src="images/hard.png" data-value="hard">
+        <img src="images/track.png" data-value="easy">
+        <img src="images/track2.png" data-value="medium">
+        <img src="images/track3.png" data-value="hard">
       </div>
     </div>
     <div class="section">
@@ -104,10 +103,8 @@
     <button id="start-btn">Start Race</button>
   </div>
 
-  <!-- Game Canvas -->
   <div id="phaser-example"></div>
 
-  <!-- HUD -->
   <div id="hud" style="display: none;">
     <div id="speedometer">Speed: 0 km/h</div>
     <button class="hud-btn" id="game-start-btn">Start</button>
@@ -146,6 +143,12 @@
       location.reload();
     });
 
+    function getTrackLength() {
+      if (selectedTrack === 'medium') return 500;
+      if (selectedTrack === 'hard') return 1000;
+      return 100;
+    }
+
     function startGame() {
       let gameStarted = false;
 
@@ -173,7 +176,8 @@
           this.keys = this.input.keyboard.addKeys('W');
           this.finished = false;
 
-          this.finishLine = this.add.zone(this.scale.width / 2, 100, this.scale.width, 20);
+          const finishY = this.scale.height - getTrackLength();
+          this.finishLine = this.add.zone(this.scale.width / 2, finishY, this.scale.width, 20);
           this.physics.world.enable(this.finishLine);
           this.finishLine.body.setAllowGravity(false);
           this.finishLine.body.moves = false;
@@ -181,12 +185,10 @@
           this.physics.add.overlap(this.car, this.finishLine, this.playerWins, null, this);
           this.physics.add.overlap(this.opponent, this.finishLine, this.opponentWins, null, this);
 
-          // Hook start button
           document.getElementById('game-start-btn').addEventListener('click', () => {
             gameStarted = true;
           });
 
-          // Restart button
           document.getElementById('restart-btn').addEventListener('click', () => {
             this.restartRace();
             gameStarted = false;
