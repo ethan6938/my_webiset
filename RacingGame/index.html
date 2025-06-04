@@ -121,13 +121,14 @@
     };
 
     function getTrackLength() {
-      switch (selectedTrack) {
-        case 'track': return 100;     // easy
-        case 'track2': return 600;    // medium
-        case 'track3': return 1000;   // hard
-        default: return 100;
-      }
-    }
+  switch (selectedTrack) {
+    case 'track': return 500;   // easy
+    case 'track2': return 1000; // medium
+    case 'track3': return 1600; // hard
+    default: return 500;
+  }
+}
+
 
     document.querySelectorAll('#track-choices img').forEach(img => {
       img.addEventListener('click', () => {
