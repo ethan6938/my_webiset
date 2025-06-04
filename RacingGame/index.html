@@ -144,9 +144,9 @@
     });
 
     function getTrackLength() {
+      if (selectedTrack === 'track') return 100;
       if (selectedTrack === 'track2') return 500;
       if (selectedTrack === 'track3') return 1000;
-      return 100;
     }
 
     function startGame() {
