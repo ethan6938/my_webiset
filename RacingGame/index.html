@@ -11,8 +11,7 @@
       overflow: hidden;
     }
     #phaser-example {
-      width: 100vw;
-      height: 100vh;
+      position: relative;
     }
     #speedometer, #restart-btn {
       position: absolute;
@@ -55,17 +54,26 @@
       }
 
       preload() {
-        this.load.image('track', 'images/track.png');
+        this.load.image('track', 'images/track.png'); // Use natural size track
         this.load.image('car', 'images/car.png');
         this.load.image('opponent', 'images/car2.png');
       }
 
       create() {
-        const bg = this.add.image(0, 0, 'track').setOrigin(0);
-        bg.setDisplaySize(this.scale.width, this.scale.height);
+        // Use original image size and match canvas size to it
+        const bg = this.add.image(0, 0, 'track').setOrigin(0, 0);
 
-        this.car = this.physics.add.sprite(300, 500, 'car').setScale(0.15).setAngle(0);
-        this.opponent = this.physics.add.sprite(500, 500, 'opponent').setScale(0.15).setAngle(0);
+        // Get image size
+        const trackWidth = bg.width;
+        const trackHeight = bg.height;
+
+        // Resize camera and world to match image
+        this.cameras.main.setBounds(0, 0, trackWidth, trackHeight);
+        this.physics.world.setBounds(0, 0, trackWidth, trackHeight);
+
+        // Position cars on the visible road part of your track
+        this.car = this.physics.add.sprite(420, 630, 'car').setScale(0.15);
+        this.opponent = this.physics.add.sprite(540, 630, 'opponent').setScale(0.15);
 
         this.car.setCollideWorldBounds(true);
         this.opponent.setCollideWorldBounds(true);
@@ -77,8 +85,8 @@
         this.keys = this.input.keyboard.addKeys('W');
         this.finished = false;
 
-        // Adjust the finish line to match track image (example at y = 100)
-        this.finishLine = this.add.zone(400, 120, 800, 20);
+        // Position the finish line to match visual location
+        this.finishLine = this.add.zone(trackWidth / 2, 100, 400, 10);
         this.physics.world.enable(this.finishLine);
         this.finishLine.body.setAllowGravity(false);
         this.finishLine.body.moves = false;
@@ -127,17 +135,18 @@
 
       restartRace() {
         this.finished = false;
-        this.car.setPosition(300, 500);
-        this.opponent.setPosition(500, 500);
+        this.car.setPosition(420, 630);
+        this.opponent.setPosition(540, 630);
         this.car.setVelocity(0);
         this.opponent.setVelocity(0);
       }
     }
 
+    // Set canvas size to match your track image (update these to match your actual image)
     const config = {
       type: Phaser.AUTO,
-      width: window.innerWidth,
-      height: window.innerHeight,
+      width: 1080,
+      height: 720,
       backgroundColor: '#111',
       parent: 'phaser-example',
       physics: {
@@ -147,11 +156,7 @@
           debug: false
         }
       },
-      scene: DragRace,
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
-      }
+      scene: DragRace
     };
 
     new Phaser.Game(config);
