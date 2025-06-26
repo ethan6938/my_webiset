@@ -151,114 +151,116 @@
     }
 
     function startGame() {
-      let gameStarted = false;
+  let gameStarted = false;
 
-      class DragRace extends Phaser.Scene {
-        constructor() {
-          super('DragRace');
-        }
+  class DragRace extends Phaser.Scene {
+    constructor() {
+      super('DragRace');
+    }
 
-        preload() {
-          this.load.image('track', `images/${selectedTrack}.png`);
-          this.load.image('car', `images/${selectedCar}.png`);
-          this.load.image('car2', selectedCar === 'car' ? 'images/car2.png' : 'images/car.png');
-        }
+    preload() {
+      this.load.image('track', `images/${selectedTrack}.png`);
+      this.load.image('car', `images/${selectedCar}.png`);
+      this.load.image('car2', selectedCar === 'car' ? 'images/car2.png' : 'images/car.png');
+    }
 
-        create() {
-          const finishDistance = getFinishDistance();
+    create() {
+      const finishDistance = getFinishDistance();
 
-          this.add.tileSprite(0, 0, this.scale.width, finishDistance, 'track')
-            .setOrigin(0, 0)
-            .setScrollFactor(1);
+      this.track = this.add.tileSprite(0, 0, this.scale.width, finishDistance, 'track')
+        .setOrigin(0, 0)
+        .setScrollFactor(1);
 
-          this.physics.world.setBounds(0, 0, this.scale.width, finishDistance);
+      this.physics.world.setBounds(0, 0, this.scale.width, finishDistance);
 
-          this.car = this.physics.add.sprite(this.scale.width / 2 - 100, finishDistance - 100, 'car').setScale(0.15);
-          this.opponent = this.physics.add.sprite(this.scale.width / 2 + 100, finishDistance - 100, 'car2').setScale(0.15);
+      this.car = this.physics.add.sprite(this.scale.width / 2 - 100, finishDistance - 100, 'car').setScale(0.25);
+      this.opponent = this.physics.add.sprite(this.scale.width / 2 + 100, finishDistance - 100, 'car2').setScale(0.25);
 
-          this.car.setCollideWorldBounds(true);
-          this.opponent.setCollideWorldBounds(true);
+      this.car.setCollideWorldBounds(true);
+      this.opponent.setCollideWorldBounds(true);
 
-          this.cameras.main.startFollow(this.car);
-          this.cameras.main.setBounds(0, 0, this.scale.width, finishDistance);
+      this.cameras.main.startFollow(this.car);
+      this.cameras.main.setBounds(0, 0, this.scale.width, finishDistance);
 
-          this.keys = this.input.keyboard.addKeys('W');
-          this.finished = false;
+      this.keys = this.input.keyboard.addKeys('W');
+      this.finished = false;
 
-          this.finishLine = this.add.zone(this.scale.width / 2, 100, this.scale.width, 20);
-          this.physics.world.enable(this.finishLine);
-          this.finishLine.body.setAllowGravity(false);
-          this.finishLine.body.moves = false;
+      this.finishLine = this.add.zone(this.scale.width / 2, 100, this.scale.width, 20);
+      this.physics.world.enable(this.finishLine);
+      this.finishLine.body.setAllowGravity(false);
+      this.finishLine.body.moves = false;
 
-          this.physics.add.overlap(this.car, this.finishLine, this.playerWins, null, this);
-          this.physics.add.overlap(this.opponent, this.finishLine, this.opponentWins, null, this);
+      this.physics.add.overlap(this.car, this.finishLine, this.playerWins, null, this);
+      this.physics.add.overlap(this.opponent, this.finishLine, this.opponentWins, null, this);
 
-          document.getElementById('game-start-btn').addEventListener('click', () => {
-            gameStarted = true;
-          });
+      document.getElementById('game-start-btn').addEventListener('click', () => {
+        gameStarted = true;
+        this.car.setAccelerationY(0);
+      });
 
-          document.getElementById('restart-btn').addEventListener('click', () => {
-            this.scene.restart();
-            gameStarted = false;
-          });
-        }
-
-        update() {
-          if (this.finished || !gameStarted) return;
-
-          const acceleration = 800;
-          const maxSpeed = 600;
-
-          if (this.keys.W.isDown) {
-            this.car.setAccelerationY(-acceleration);
-          } else {
-            this.car.setAccelerationY(0);
-            this.car.setDragY(400);
-          }
-
-          if (this.opponent.body.velocity.y > -maxSpeed) {
-            this.opponent.setAccelerationY(-600);
-          } else {
-            this.opponent.setAccelerationY(0);
-            this.opponent.setVelocityY(-maxSpeed);
-          }
-
-          const speedKmh = Math.round(Math.abs(this.car.body.velocity.y) * 3.6);
-          document.getElementById('speedometer').textContent = `Speed: ${speedKmh} km/h`;
-        }
-
-        playerWins() {
-          if (!this.finished) {
-            this.finished = true;
-            alert('You Win!');
-          }
-        }
-
-        opponentWins() {
-          if (!this.finished) {
-            this.finished = true;
-            alert('Opponent Wins!');
-          }
-        }
-      }
-
-      new Phaser.Game({
-        type: Phaser.AUTO,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        backgroundColor: '#111',
-        parent: 'phaser-example',
-        physics: {
-          default: 'arcade',
-          arcade: { gravity: { y: 0 }, debug: false }
-        },
-        scene: DragRace,
-        scale: {
-          mode: Phaser.Scale.RESIZE,
-          autoCenter: Phaser.Scale.CENTER_BOTH
-        }
+      document.getElementById('restart-btn').addEventListener('click', () => {
+        this.scene.restart();
+        gameStarted = false;
       });
     }
-  </script>
-</body>
-</html>
+
+    update() {
+      if (this.finished || !gameStarted) return;
+
+      const maxSpeed = 300 / 3.6; // 300 km/h in pixels/sec
+      const acceleration = 200;
+
+      if (this.keys.W.isDown) {
+        if (this.car.body.velocity.y > -maxSpeed) {
+          this.car.setAccelerationY(-acceleration);
+        } else {
+          this.car.setAccelerationY(0);
+        }
+      } else {
+        this.car.setAccelerationY(0);
+        this.car.setDragY(300);
+      }
+
+      // Opponent auto accelerates realistically
+      if (this.opponent.body.velocity.y > -maxSpeed * 0.9) {
+        this.opponent.setAccelerationY(-150);
+      } else {
+        this.opponent.setAccelerationY(0);
+      }
+
+      const speedKmh = Math.round(Math.abs(this.car.body.velocity.y) * 3.6);
+      document.getElementById('speedometer').textContent = `Speed: ${speedKmh} km/h`;
+    }
+
+    playerWins() {
+      if (!this.finished) {
+        this.finished = true;
+        alert('🏁 You Win!');
+      }
+    }
+
+    opponentWins() {
+      if (!this.finished) {
+        this.finished = true;
+        alert('💥 Opponent Wins!');
+      }
+    }
+  }
+
+  new Phaser.Game({
+    type: Phaser.AUTO,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: '#111',
+    parent: 'phaser-example',
+    physics: {
+      default: 'arcade',
+      arcade: { gravity: { y: 0 }, debug: false }
+    },
+    scene: DragRace,
+    scale: {
+      mode: Phaser.Scale.RESIZE,
+      autoCenter: Phaser.Scale.CENTER_BOTH
+    }
+  });
+}
