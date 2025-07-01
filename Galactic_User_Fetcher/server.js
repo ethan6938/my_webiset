@@ -1,12 +1,39 @@
 import express from 'express';
+import fetch from 'node-fetch';
 
 const app = express();
+const PORT = 3000;
 
+// Middleware
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.get('/users', async (req, res) => {
+let fakeUsers = []; // Simple in-memory "database"
+
+// Sign up
+app.post('/signup', (req, res) => {
+  const { email, password } = req.body;
+  const exists = fakeUsers.find(u => u.email === email);
+  if (exists) {
+    return res.send(`<div class="text-danger">🚫 Email already registered!</div>`);
+  }
+  fakeUsers.push({ email, password });
+  res.send(`<div class="text-success">✅ Signup successful! Welcome, ${email}.</div>`);
+});
+
+// Login
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  const user = fakeUsers.find(u => u.email === email && u.password === password);
+  if (!user) {
+    return res.send(`<div class="text-danger">🚫 Invalid credentials</div>`);
+  }
+  res.send(`<div class="text-success">🚀 Logged in as ${email}</div>`);
+});
+
+// User fetcher API
+app.get('/api/users', async (req, res) => {
   const limit = +req.query.limit || 5;
   const response = await fetch(`https://jsonplaceholder.typicode.com/users?_limit=${limit}`);
   const users = await response.json();
@@ -30,10 +57,10 @@ app.get('/users', async (req, res) => {
       </ul>
     </div>
   `;
-      })
-      
   res.send(html);
+});
 
-app.listen(3000, () => {
-  console.log('🚀 Server ready at https://my-webiset.vercel.app/Galactic_User_Fetcher/public/index.html');
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server ready at http://my-webiset.vercel.app/Galactic_User_Fetcher/public/index.html`);
 });
