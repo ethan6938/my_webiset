@@ -40,6 +40,37 @@ window.DR.game.DragRaceScene = class DragRaceScene extends window.Phaser.Scene {
 
     this.physics.add.overlap(this.car, this.finishLine, this.playerWins, undefined, this);
     this.physics.add.overlap(this.opponent, this.finishLine, this.opponentWins, undefined, this);
+
+    // ✅ Listen for React -> Phaser events
+    this.onStartGame = () => {
+      this.game.registry.set('gameStartedFlag', true);
+      this.finished = false;
+      this.car.setAccelerationY(0);
+      this.opts.onSpeed?.(0);
+    };
+
+    this.onRestartGame = () => {
+      // Stop race and reset HUD speed
+      this.game.registry.set('gameStartedFlag', false);
+      this.finished = false;
+      this.opts.onSpeed?.(0);
+
+      // Restart scene to reset positions/physics cleanly
+      this.scene.restart();
+    };
+
+    this.game.events.on('start-game', this.onStartGame);
+    this.game.events.on('restart-game', this.onRestartGame);
+
+    // 🧹 Cleanup to avoid duplicate listeners after scene restarts/destroys
+    this.events.once('shutdown', () => {
+      this.game.events.off('start-game', this.onStartGame);
+      this.game.events.off('restart-game', this.onRestartGame);
+    });
+    this.events.once('destroy', () => {
+      this.game.events.off('start-game', this.onStartGame);
+      this.game.events.off('restart-game', this.onRestartGame);
+    });
   }
 
   update() {
