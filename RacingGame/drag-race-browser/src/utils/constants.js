@@ -1,0 +1,1 @@
+export const FINISH_BY_TRACK={track:1000,track2:1800,track3:2600};export const getFinishDistance=t=>FINISH_BY_TRACK[t]??1400;
