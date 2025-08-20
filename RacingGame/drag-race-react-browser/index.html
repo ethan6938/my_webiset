@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Drag Race (React - No Build)</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Phaser -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+  <!-- React UMD + Babel Standalone for JSX in-browser -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Utils -->
+  <script type="text/babel" data-presets="react" src="utils/constants.jsx"></script>
+
+  <!-- Components -->
+  <script type="text/babel" data-presets="react" src="components/Section.jsx"></script>
+  <script type="text/babel" data-presets="react" src="components/ChoiceImg.jsx"></script>
+  <script type="text/babel" data-presets="react" src="components/Menu.jsx"></script>
+  <script type="text/babel" data-presets="react" src="components/HUD.jsx"></script>
+
+  <!-- Game & Stage -->
+  <script type="text/babel" data-presets="react" src="game/DragRaceScene.jsx"></script>
+  <script type="text/babel" data-presets="react" src="stages/PhaserStage.jsx"></script>
+
+  <!-- App + Mount -->
+  <script type="text/babel" data-presets="react" src="App.jsx"></script>
+  <script type="text/babel" data-presets="react" src="main.jsx"></script>
+</body>
+</html>
