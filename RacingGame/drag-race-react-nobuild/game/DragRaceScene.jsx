@@ -1,4 +1,6 @@
-class DragRaceScene extends window.Phaser.Scene {
+window.DR = window.DR || {}; window.DR.game = window.DR.game || {};
+
+window.DR.game.DragRaceScene = class DragRaceScene extends window.Phaser.Scene {
   constructor(opts) {
     super('DragRace');
     this.opts = opts; // { selectedTrack, selectedCar, finishDistance, onSpeed }
@@ -77,6 +79,4 @@ class DragRaceScene extends window.Phaser.Scene {
       this.game.registry.set('gameStartedFlag', false);
     }
   }
-}
-
-window.DRGame = Object.assign(window.DRGame || {}, { DragRaceScene });
+};

@@ -1,8 +1,9 @@
-const { Menu, HUD } = window.DRComponents;
-const { PhaserStage } = window.DRStages;
-const { getFinishDistance } = window.DRUtils;
+window.DR = window.DR || {};
+const { Menu, HUD } = window.DR.components;
+const { PhaserStage } = window.DR.stages;
+const { getFinishDistance } = window.DR.utils;
 
-const App = () => {
+window.DR.App = function App() {
   const [selectedTrack, setSelectedTrack] = React.useState('track');
   const [selectedCar, setSelectedCar] = React.useState('car');
   const [showMenu, setShowMenu] = React.useState(true);
@@ -11,10 +12,7 @@ const App = () => {
 
   const finishDistance = React.useMemo(() => getFinishDistance(selectedTrack), [selectedTrack]);
 
-  const handleStartFromMenu = () => {
-    setShowMenu(false);
-  };
-
+  const handleStartFromMenu = () => { setShowMenu(false); };
   const handleGameReady = (gameInstance) => setGame(gameInstance);
 
   const emit = (evt) => game?.events.emit(evt);
@@ -65,5 +63,3 @@ const App = () => {
     </div>
   );
 };
-
-window.DRApp = { App };

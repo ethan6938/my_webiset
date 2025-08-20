@@ -1,9 +1,10 @@
-const PhaserStage = ({ onReady, children, ...props }) => {
+window.DR = window.DR || {}; window.DR.stages = window.DR.stages || {};
+
+window.DR.stages.PhaserStage = function PhaserStage({ onReady, children, ...props }) {
   const mountRef = React.useRef(null);
   const gameRef = React.useRef(null);
 
   React.useEffect(() => {
-    // Create custom canvas with willReadFrequently for Canvas path
     const root = mountRef.current;
     root.innerHTML = '';
     const canvas = document.createElement('canvas');
@@ -11,7 +12,7 @@ const PhaserStage = ({ onReady, children, ...props }) => {
     root.appendChild(canvas);
 
     const { selectedTrack, selectedCar, finishDistance, onSpeed } = props;
-    const scene = new window.DRGame.DragRaceScene({ selectedTrack, selectedCar, finishDistance, onSpeed });
+    const scene = new window.DR.game.DragRaceScene({ selectedTrack, selectedCar, finishDistance, onSpeed });
 
     const game = new window.Phaser.Game({
       type: window.Phaser.CANVAS,
@@ -46,4 +47,3 @@ const PhaserStage = ({ onReady, children, ...props }) => {
     </>
   );
 };
-window.DRStages = Object.assign(window.DRStages || {}, { PhaserStage });
