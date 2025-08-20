@@ -33,7 +33,7 @@ window.DR.components.Menu = function Menu({ selectedTrack, setSelectedTrack, sel
         </div>
       </div>
 
-      <button onClick={onStart} className="btn">Start Race</button>
+      <button type="button" onClick={() => { console.log('Start clicked'); onStart(); }} className="btn">Start Race</button>
     </div>
   );
 };

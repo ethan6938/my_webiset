@@ -5,10 +5,15 @@ window.DR.components.ChoiceImg = function ChoiceImg({ src, selected, onClick, al
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl border-4 ${selected ? "border-white" : "border-transparent"} transition-transform hover:scale-105 overflow-hidden`}
+      style={{
+        borderRadius: '16px',
+        border: `4px solid ${selected ? '#fff' : 'transparent'}`,
+        cursor: 'pointer',
+        overflow: 'hidden'
+      }}
       aria-pressed={selected}
     >
-      <img src={src} alt={alt} className="w-24 h-24 object-cover block" />
+      <img src={src} alt={alt} style={{ width: '96px', height: '96px', objectFit: 'cover', display: 'block' }} />
     </button>
   );
 };

@@ -12,7 +12,7 @@ window.DR.App = function App() {
 
   const finishDistance = React.useMemo(() => getFinishDistance(selectedTrack), [selectedTrack]);
 
-  const handleStartFromMenu = () => { setShowMenu(false); };
+  const handleStartFromMenu = () => { console.log('menu -> start'); setShowMenu(false); };
   const handleGameReady = (gameInstance) => setGame(gameInstance);
 
   const emit = (evt) => game?.events.emit(evt);
@@ -34,7 +34,7 @@ window.DR.App = function App() {
   };
 
   return (
-    <div className="relative min-h-screen text-white" style={{ background: '#111' }}>
+    <div>
       {showMenu ? (
         <Menu
           selectedTrack={selectedTrack}

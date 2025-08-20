@@ -42,7 +42,7 @@ window.DR.stages.PhaserStage = function PhaserStage({ onReady, children, ...prop
 
   return (
     <>
-      <div ref={mountRef} id="phaser-root" style={{ width: '100vw', height: '100vh' }} />
+      <div ref={mountRef} id="phaser-root" />
       {children}
     </>
   );
