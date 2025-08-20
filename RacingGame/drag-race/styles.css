@@ -1,0 +1,36 @@
+:root { color-scheme: dark; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto;
+  background: #111;
+  color: #fff;
+}
+.menu {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px;
+  z-index: 9999; background: #111;
+}
+.choices { display: flex; gap: 15px; margin-top: 10px; }
+.choices img {
+  width: 100px; border: 3px solid transparent; border-radius: 10px;
+  cursor: pointer; transition: transform .2s, border-color .2s;
+}
+.choices img:hover { transform: scale(1.05); }
+.choices img.selected { border-color: #fff; }
+.btn {
+  padding: 12px 28px; font-size: 20px; background: #444; color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+}
+#phaser-root { display: none; position: fixed; inset: 0; z-index: 1; }
+#hud {
+  position: fixed; top: 20px; left: 20px; z-index: 10;
+  display: none; flex-direction: column; gap: 12px;
+}
+.hud-btn {
+  font-family: monospace; font-size: 16px; color: #fff;
+  background: rgba(0,0,0,.4); padding: 8px 12px; border: 2px solid #fff; border-radius: 8px; cursor: pointer;
+}
+#speedometer {
+  font-family: monospace; font-size: 20px; color: #fff;
+  background: rgba(0,0,0,.4); padding: 8px 12px; border-radius: 8px;
+}

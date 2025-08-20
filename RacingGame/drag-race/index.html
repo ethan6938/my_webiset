@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Drag Race (Standalone)</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+</head>
+<body>
+  <!-- MENU -->
+  <div id="menu" class="menu">
+    <div class="section">
+      <h2>Select Track</h2>
+      <div class="choices" id="track-choices">
+        <img src="images/track.png"  data-value="track"  alt="Easy">
+        <img src="images/track2.png" data-value="track2" alt="Medium">
+        <img src="images/track3.png" data-value="track3" alt="Hard">
+      </div>
+    </div>
+    <div class="section">
+      <h2>Select Car</h2>
+      <div class="choices" id="car-choices">
+        <img src="images/car.png"  data-value="car"  alt="Car 1">
+        <img src="images/car2.png" data-value="car2" alt="Car 2">
+      </div>
+    </div>
+    <button id="start-btn" class="btn">Start Race</button>
+  </div>
+
+  <!-- GAME + HUD -->
+  <div id="phaser-root"></div>
+  <div id="hud">
+    <div id="speedometer">Speed: 0 km/h</div>
+    <button class="hud-btn" id="game-start-btn">Start</button>
+    <button class="hud-btn" id="restart-btn">Restart</button>
+    <button class="hud-btn" id="back-btn">Back</button>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
