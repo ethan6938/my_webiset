@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pong — Levels + First to 5 (Compat Mode)</title>
+  <style>
+    html,body{height:100%;margin:0}
+    body{display:grid;place-items:center;background:#0b0b0b;color:#eee;font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial}
+    .wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
+    .btn{appearance:none;border:1px solid #3a3a3a;background:#161616;color:#eee;padding:6px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+    .btn:hover{background:#1f1f1f}
+    .meta{color:#bbb;font-size:14px;text-align:center}
+    canvas{background:#000;border:2px solid #444;box-shadow:0 0 0 2px #111}
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/brython@3.12.3/brython.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/brython@3.12.3/brython_stdlib.min.js"></script>
+</head>
+<body onload="brython()">
+  <div class="wrap">
+    <div class="toolbar">
+      <button id="btnEasy" class="btn">Easy (1)</button>
+      <button id="btnMed" class="btn">Medium (2)</button>
+      <button id="btnHard" class="btn">Hard (3)</button>
+      <button id="btnPause" class="btn">Pause (P)</button>
+      <button id="btnRestart" class="btn">Restart (R)</button>
+    </div>
+    <canvas id="game" width="800" height="500" aria-label="Pong game (levels)"></canvas>
+    <div class="meta" id="metaText">First to 5 wins • Press Space to serve • W/S or ↑/↓ to move • Ball size fixed</div>
+  </div>
+
+  <script type="text/python">
+from browser import document, timer, window
+import random, math
+
+# --- Fixed-size canvas for maximum compatibility ---
+canvas = document['game']
+ctx = canvas.getContext('2d')
+W, H = canvas.width, canvas.height
+
+# ====== LEVELS ======
+LEVELS = {
+    'Easy':   {'padH': 130, 'ai_speed': 300, 'ball_speed': 320},
+    'Medium': {'padH': 110, 'ai_speed': 380, 'ball_speed': 360},
+    'Hard':   {'padH': 90,  'ai_speed': 460, 'ball_speed': 400},
+}
+current_level = 'Medium'
+
+# Sizes (BALL STAYS THE SAME SIZE)
+padW = 12
+padH = LEVELS[current_level]['padH']
+ballS = 14   # **Fixed ball size**
+
+# Speeds (per level)
+pad_speed = 420  # player speed
+ai_speed  = LEVELS[current_level]['ai_speed']
+ball_speed_base = LEVELS[current_level]['ball_speed']
+
+# State
+left_y = H/2 - padH/2
+right_y = H/2 - padH/2
+ball_x, ball_y = W/2, H/2
+ball_dx, ball_dy = 0.0, 0.0
+ball_speed = ball_speed_base
+scoreL = scoreR = 0
+max_score = 5  # first to 5 wins
+paused = False
+ready = True
+serving_to = 1 # 1 -> to AI, -1 -> to player
+ai_hit_timer = 0.0
+
+keys = {'up':False,'down':False,'w':False,'s':False}
+
+meta_el = document['metaText']
+
+def update_meta():
+    meta_el.textContent = f"Level: {current_level} • First to {max_score} wins • Press Space to serve • W/S or ↑/↓ to move • Ball size fixed"
+
+
+def apply_level(name):
+    global current_level, padH, ai_speed, ball_speed_base, left_y, right_y
+    if name not in LEVELS:
+        return
+    current_level = name
+    cfg = LEVELS[name]
+    padH = cfg['padH']
+    ai_speed = cfg['ai_speed']
+    ball_speed_base = cfg['ball_speed']
+    # keep paddles inside after resizing
+    from builtins import max as bmax, min as bmin
+    left_y = bmin(bmax(left_y, 0), H - padH)
+    right_y = bmin(bmax(right_y, 0), H - padH)
+    update_meta()
+
+
+# Helpers
+
+def clamp(v, lo, hi):
+    return lo if v < lo else hi if v > hi else v
+
+
+def center_ball():
+    global ball_x, ball_y
+    ball_x, ball_y = W//2, H//2
+
+
+def reset_round():
+    global left_y, right_y, ready, ai_hit_timer, ball_dx, ball_dy
+    left_y = H/2 - padH/2
+    right_y = H/2 - padH/2
+    center_ball()
+    ready = True
+    ai_hit_timer = 0.0
+    ball_dx = ball_dy = 0.0
+
+
+def serve():
+    global ready, ball_dx, ball_dy, ball_speed
+    angle = (random.random()*0.5 - 0.25)  # about +/- 14 deg
+    base = 1 if serving_to > 0 else -1
+    ball_speed = ball_speed_base
+    ball_dx = math.cos(angle) * ball_speed * base
+    ball_dy = math.sin(angle) * ball_speed
+    ready = False
+
+# --- Input ---
+
+def keydown(ev):
+    global paused
+    k = ev.key.lower()
+    if k in ('arrowup','up'): keys['up'] = True
+    elif k in ('arrowdown','down'): keys['down'] = True
+    elif k == 'w': keys['w'] = True
+    elif k == 's': keys['s'] = True
+    elif k == 'p': paused = not paused
+    elif k == 'r': restart()
+    elif k == '1': apply_level('Easy')
+    elif k == '2': apply_level('Medium')
+    elif k == '3': apply_level('Hard')
+    elif k == ' ':
+        if ready and not (scoreL >= max_score or scoreR >= max_score):
+            serve()
+    if k in (' ','arrowup','arrowdown','up','down'):
+        ev.preventDefault()
+
+def keyup(ev):
+    k = ev.key.lower()
+    if k in ('arrowup','up'): keys['up'] = False
+    elif k in ('arrowdown','down'): keys['down'] = False
+    elif k == 'w': keys['w'] = False
+    elif k == 's': keys['s'] = False
+
+document.bind('keydown', keydown)
+document.bind('keyup', keyup)
+
+# Buttons
+
+def btn_pause(ev):
+    global paused
+    paused = not paused
+
+def btn_restart(ev):
+    restart()
+
+def btn_easy(ev):
+    apply_level('Easy')
+
+def btn_med(ev):
+    apply_level('Medium')
+
+def btn_hard(ev):
+    apply_level('Hard')
+
+document['btnPause'].bind('click', btn_pause)
+document['btnRestart'].bind('click', btn_restart)
+document['btnEasy'].bind('click', btn_easy)
+document['btnMed'].bind('click', btn_med)
+document['btnHard'].bind('click', btn_hard)
+
+# Optional mouse move
+
+def on_move(ev):
+    global left_y
+    y = ev.clientY if hasattr(ev,'clientY') else (ev.touches[0].clientY if getattr(ev,'touches',None) else H/2)
+    rect = canvas.getBoundingClientRect()
+    cy = y - rect.top
+    left_y = clamp(cy - padH/2, 0, H - padH)
+
+canvas.bind('mousemove', on_move)
+canvas.bind('touchmove', on_move)
+
+# --- Game helpers ---
+
+def restart():
+    global scoreL, scoreR, serving_to, paused
+    scoreL = scoreR = 0
+    serving_to = 1
+    paused = False
+    reset_round()
+
+
+# --- Update & Draw ---
+last_t = window.performance.now()
+
+
+def update(dt):
+    global left_y, right_y, ball_x, ball_y, ball_dx, ball_dy, scoreL, scoreR, serving_to, ai_hit_timer, paused, ready
+    # Stop everything if match ended
+    if scoreL >= max_score or scoreR >= max_score:
+        return
+    if paused:
+        return
+
+    # Player paddle
+    vy = 0
+    if keys['up'] or keys['w']: vy -= pad_speed
+    if keys['down'] or keys['s']: vy += pad_speed
+    left_y = clamp(left_y + vy*dt, 0, H - padH)
+
+    # Ball waits at center if ready
+    if ready:
+        center_ball()
+        return
+
+    # AI follow
+    target = ball_y - padH/2
+    if abs(target - right_y) > 1:
+        right_y += ai_speed * dt * (1 if target > right_y else -1)
+    right_y = clamp(right_y, 0, H - padH)
+
+    # Move ball
+    ball_x += ball_dx * dt
+    ball_y += ball_dy * dt
+
+    # Walls
+    half = ballS/2
+    if ball_y - half <= 0 and ball_dy < 0:
+        ball_y = half
+        ball_dy *= -1
+    elif ball_y + half >= H and ball_dy > 0:
+        ball_y = H - half
+        ball_dy *= -1
+
+    # Left paddle
+    if ball_x - half <= padW and left_y <= ball_y <= left_y + padH and ball_dx < 0:
+        rel = (ball_y - (left_y + padH/2)) / (padH/2)
+        ang = rel * (math.pi/3)
+        speed = (ball_dx**2 + ball_dy**2) ** 0.5 * 1.04
+        ball_dx = math.cos(ang) * speed
+        ball_dy = math.sin(ang) * speed
+        ball_x = padW + half + 1
+
+    # Right paddle (AI)
+    if ball_x + half >= W - padW and right_y <= ball_y <= right_y + padH and ball_dx > 0:
+        rel = (ball_y - (right_y + padH/2)) / (padH/2)
+        ang = math.pi - rel * (math.pi/3)
+        speed = (ball_dx**2 + ball_dy**2) ** 0.5 * 1.04
+        ball_dx = math.cos(ang) * speed
+        ball_dy = -math.sin(ang) * speed
+        ball_x = W - padW - half - 1
+        ai_hit_timer = 0.2
+
+    # Score
+    if ball_x < -ballS:
+        scoreR += 1
+        serving_to = -1
+        reset_round()
+    elif ball_x > W + ballS:
+        scoreL += 1
+        serving_to = 1
+        reset_round()
+
+
+def draw():
+    # Background
+    ctx.fillStyle = '#101010'
+    ctx.fillRect(0,0,W,H)
+
+    # Center line
+    ctx.strokeStyle = '#2a2a2a'
+    ctx.lineWidth = 4
+    ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke()
+
+    # Paddles
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, int(left_y), padW, padH)
+
+    if ai_hit_timer > 0:
+        ctx.fillStyle = 'rgba(56,189,248,0.35)'
+        ctx.fillRect(W - padW - 6, int(right_y) - 6, padW + 12, padH + 12)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(W - padW, int(right_y), padW, padH)
+
+    # Ball — fixed-size square + outline
+    bx = int(ball_x - ballS/2)
+    by = int(ball_y - ballS/2)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(bx, by, ballS, ballS)
+    ctx.strokeStyle = '#000'
+    ctx.lineWidth = 2
+    ctx.strokeRect(bx, by, ballS, ballS)
+
+    # Score & status
+    ctx.fillStyle = '#ddd'
+    ctx.font = '20px system-ui'
+    ctx.textAlign = 'center'
+    ctx.fillText(str(scoreL), W*0.25, 28)
+    ctx.fillText(str(scoreR), W*0.75, 28)
+
+    if scoreL >= max_score or scoreR >= max_score:
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'
+        ctx.fillRect(0,0,W,H)
+        ctx.fillStyle = '#fff'
+        ctx.font = '28px system-ui'
+        winner = 'You' if scoreL > scoreR else 'AI'
+        ctx.fillText(f'{winner} win! First to {max_score} reached.', W/2, H/2)
+        ctx.font = '18px system-ui'
+        ctx.fillText('Press R to restart • 1/2/3 to change level', W/2, H/2 + 36)
+    elif paused:
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'
+        ctx.fillRect(0,0,W,H)
+        ctx.fillStyle = '#fff'
+        ctx.font = '24px system-ui'
+        ctx.fillText('Paused — press P to resume', W/2, H/2)
+    elif ready:
+        ctx.fillStyle = '#fff'
+        ctx.font = '22px system-ui'
+        ctx.fillText('Press Space to serve', W/2, 60)
+
+
+# Main loop
+last_t = window.performance.now()
+
+def tick():
+    global last_t
+    now = window.performance.now()
+    dt = max(0.0, (now - last_t)/1000.0)
+    last_t = now
+    update(dt)
+    draw()
+
+# Init
+update_meta()
+center_ball()
+timer.set_interval(tick, 16)
+  </script>
+</body>
+</html>
