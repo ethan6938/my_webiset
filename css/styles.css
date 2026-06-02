@@ -12626,7 +12626,7 @@ p {
 }
 
 .page-section {
-  padding: 6rem 0;
+  padding: 3rem 0;
 }
 
 .page-section h2.section-heading,
@@ -12800,7 +12800,7 @@ header.masthead .masthead-heading {
 
 @media (min-width: 768px) {
   header.masthead {
-    padding-top: 17rem;
+    padding-top: 7rem;
     padding-bottom: 12.5rem;
   }
 
