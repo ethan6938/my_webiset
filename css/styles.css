@@ -13214,3 +13214,67 @@ section#contact form#contactForm :-ms-input-placeholder {
   font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   color: #fff;
 }
+
+.footer {
+  text-align: center;
+  font-size: 0.9rem;
+  font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  color: #fff;
+}
+
+/* Fix masthead/header image height */
+header.masthead {
+  padding-top: 4.5rem !important;
+  padding-bottom: 0 !important;
+  height: 120px !important;
+  min-height: 120px !important;
+  max-height: 120px !important;
+  overflow: hidden !important;
+  background-image: url("../assets/img/header-bg.jpg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+}
+
+/* Hide the image inside the header */
+header.masthead img {
+  display: none !important;
+}
+
+/* Stop desktop CSS from making the header big again */
+@media (min-width: 768px) {
+  header.masthead {
+    padding-top: 4.5rem !important;
+    padding-bottom: 0 !important;
+    height: 120px !important;
+    min-height: 120px !important;
+    max-height: 120px !important;
+  }
+}
+
+/* Fix certification card spacing/alignment */
+#certifications .row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+#certifications .col-lg-3,
+#certifications .col-md-4,
+#certifications .col-sm-6 {
+  margin-bottom: 2rem;
+}
+
+#certifications .card {
+  height: 100%;
+}
+
+#certifications .card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+#certifications .card-body .btn {
+  margin-top: auto;
+}
